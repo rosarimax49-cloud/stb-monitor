@@ -1,23 +1,18 @@
 [
   {
-    "id": "6861bac6-e11f-4503-954b-73587e56f9df",
-    "at": "2026-06-10T18:34:25.060Z",
-    "type": "adb",
+    "id": "e4cd7239-2b74-463b-a992-460d509d4f8a",
+    "at": "2026-06-10T19:08:16.301Z",
+    "type": "alert",
     "deviceId": "demo-studio",
     "deviceName": "Studio STB",
-    "message": "ADB props failed for Studio STB",
+    "message": "Offline alert not sent for Studio STB: SMTP_HOST and ALERT_TO are not configured",
     "severity": "warning"
   },
   {
-    "id": "d51f51bd-aaaf-416c-a9d5-6f77439a9c1d",
-    "at": "2026-06-10T18:44:53.314Z",
-    "type": "alert",
-    "deviceId": "samsung",
-    "deviceName": "X96mini",
-    "message": "Offline alert not sent for X96mini: SMTP_HOST and ALERT_TO are not configured",
-    "severity": "warning"
-  }
-]
-
+    "id": "81c6266f-3472-4b96-82c7-6f3880ac86e7",
+    "at": "2026-06-10T19:09:24.314Z",
+    "type": "settings",
+    "message": "Settings updated",
+    "severity": "info"
   }
 ]

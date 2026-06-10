@@ -64,6 +64,7 @@ async function loadEvents() {
 async function loadSettings() {
   const json = await api("/api/settings");
   state.settings = json.settings;
+  applyAppTitle();
   fillSettingsForm();
 }
 
@@ -230,6 +231,8 @@ function sortedDevices(devices = filteredDevices()) {
   const valueFor = (device) => {
     if (state.sort.field === "status") return statusRank[device.status.state] ?? 9;
     if (state.sort.field === "ip") return device.host || "";
+    if (state.sort.field === "lastChecked") return Date.parse(device.status.lastCheckedAt || "") || 0;
+    if (state.sort.field === "lastOnline") return Date.parse(device.status.lastOnlineAt || "") || 0;
     return device[state.sort.field] || "";
   };
   return [...devices].sort((a, b) => {
@@ -301,6 +304,8 @@ function renderDeviceList(grid, devices) {
           <th><button type="button" data-sort="ip">IP${sortLabel("ip")}</button></th>
           <th><button type="button" data-sort="location">Location${sortLabel("location")}</button></th>
           <th><button type="button" data-sort="status">Status${sortLabel("status")}</button></th>
+          <th><button type="button" data-sort="lastChecked">Last Checked${sortLabel("lastChecked")}</button></th>
+          <th><button type="button" data-sort="lastOnline">Last Online${sortLabel("lastOnline")}</button></th>
         </tr>
       </thead>
       <tbody>
@@ -313,6 +318,8 @@ function renderDeviceList(grid, devices) {
               <td>${escapeHtml(device.host)}</td>
               <td>${escapeHtml(device.location || "No location")}</td>
               <td><span class="status ${statusClass}">${escapeHtml(device.status.state)}</span></td>
+              <td>${fmtTime(device.status.lastCheckedAt)}</td>
+              <td>${fmtTime(device.status.lastOnlineAt)}</td>
             </tr>
           `;
         }).join("")}
@@ -586,6 +593,12 @@ function render() {
   $("#lastUpdated").textContent = latest ? `Last checked ${fmtTime(latest)}` : "Waiting for first check";
 }
 
+function applyAppTitle() {
+  const title = state.settings?.appTitle || "STB Monitor";
+  $("#appTitle").textContent = title;
+  document.title = title;
+}
+
 function openScreenshot(deviceId) {
   const device = state.devices.find((candidate) => candidate.id === deviceId);
   const screenshotUrl = state.screenshots[deviceId];
@@ -606,6 +619,7 @@ function fillSettingsForm() {
   if (!state.settings) return;
   const form = $("#settingsForm");
   const settings = state.settings;
+  form.elements.appTitle.value = settings.appTitle || "STB Monitor";
   form.elements.port.value = settings.port;
   form.elements.monitorIntervalMs.value = settings.monitorIntervalMs;
   form.elements.pingTimeoutMs.value = settings.pingTimeoutMs;
@@ -685,6 +699,7 @@ async function deleteSelectedDevice() {
 function settingsPayload() {
   const form = new FormData($("#settingsForm"));
   return {
+    appTitle: form.get("appTitle"),
     port: form.get("port"),
     monitorIntervalMs: form.get("monitorIntervalMs"),
     pingTimeoutMs: form.get("pingTimeoutMs"),
@@ -721,6 +736,7 @@ async function saveSettings(event) {
   });
   state.settings = json.settings;
   state.intervalMs = json.settings.monitorIntervalMs;
+  applyAppTitle();
   fillSettingsForm();
   $("#settingsMessage").textContent = json.note || "Saved.";
   if ($("#settingsDialog").open) $("#settingsDialog").close();
@@ -734,6 +750,7 @@ async function testEmail() {
     body: JSON.stringify(settingsPayload()),
   });
   state.settings = saved.settings;
+  applyAppTitle();
   $("#settingsMessage").textContent = "Sending test email...";
   try {
     await api("/api/settings/test-email", { method: "POST", body: "{}" });

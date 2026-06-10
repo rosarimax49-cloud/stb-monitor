@@ -35,6 +35,7 @@ function boolEnv(name, fallback = false) {
 loadDotEnv();
 
 const config = {
+  appTitle: process.env.APP_TITLE || "STB Monitor",
   port: intEnv("PORT", 3000),
   monitorIntervalMs: intEnv("MONITOR_INTERVAL_MS", 30000),
   pingTimeoutMs: intEnv("PING_TIMEOUT_MS", 3000),
@@ -69,6 +70,7 @@ function stringSetting(source, key, fallback = "") {
 function cleanSettings(input = {}) {
   const smtp = input.smtp || {};
   return {
+    appTitle: stringSetting(input, "appTitle", config.appTitle || "STB Monitor").trim() || "STB Monitor",
     port: numberSetting(input.port, config.port, 1),
     monitorIntervalMs: numberSetting(input.monitorIntervalMs, config.monitorIntervalMs, 5000),
     pingTimeoutMs: numberSetting(input.pingTimeoutMs, config.pingTimeoutMs, 1000),
@@ -96,6 +98,7 @@ function cleanSettings(input = {}) {
 
 function applySettings(input = {}) {
   const next = cleanSettings(input);
+  config.appTitle = next.appTitle;
   config.port = next.port;
   config.monitorIntervalMs = next.monitorIntervalMs;
   config.pingTimeoutMs = next.pingTimeoutMs;
@@ -110,6 +113,7 @@ function applySettings(input = {}) {
 
 function getSettings() {
   return {
+    appTitle: config.appTitle,
     port: config.port,
     monitorIntervalMs: config.monitorIntervalMs,
     pingTimeoutMs: config.pingTimeoutMs,

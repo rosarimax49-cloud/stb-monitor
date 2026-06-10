@@ -25,6 +25,7 @@ Open `http://localhost:3000`.
 Edit `.env`:
 
 ```text
+APP_TITLE=STB Monitor
 PORT=3000
 MONITOR_INTERVAL_MS=30000
 PING_TIMEOUT_MS=3000

@@ -1,4 +1,5 @@
 {
+  "appTitle": "RISTV STB Studio: Monitor & Management",
   "port": 3001,
   "monitorIntervalMs": 30000,
   "pingTimeoutMs": 3000,
