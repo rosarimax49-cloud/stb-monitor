@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RISTV STB Monitor</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">RISTV Operations</p>
+        <h1>STB Monitor</h1>
+      </div>
+      <div class="toolbar">
+        <button id="refreshBtn" class="icon-button" title="Refresh now">Refresh</button>
+        <button id="addBtn" class="primary">Add STB</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="summary" aria-label="Fleet summary">
+        <div class="metric">
+          <span>Total</span>
+          <strong id="totalCount">0</strong>
+        </div>
+        <div class="metric online">
+          <span>Online</span>
+          <strong id="onlineCount">0</strong>
+        </div>
+        <div class="metric offline">
+          <span>Offline</span>
+          <strong id="offlineCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>Average Latency</span>
+          <strong id="avgLatency">--</strong>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Devices</h2>
+            <div class="panel-tools">
+              <input id="deviceFilter" class="device-filter" type="search" placeholder="Filter STBs">
+              <div class="status-filter" aria-label="Filter STBs by status">
+                <button type="button" class="active" data-status-filter="all">All</button>
+                <button type="button" data-status-filter="online">OK</button>
+                <button type="button" data-status-filter="offline">Offline</button>
+                <button type="button" data-status-filter="disabled">Disabled</button>
+              </div>
+              <span id="lastUpdated">Waiting for first check</span>
+              <button id="viewToggle" type="button">List View</button>
+            </div>
+          </div>
+          <div id="deviceGrid" class="device-grid"></div>
+        </div>
+
+        <aside class="panel details-panel">
+          <div class="panel-head">
+            <h2>STB Details</h2>
+            <span id="detailsStatus">Select an STB</span>
+          </div>
+          <form id="detailsForm" class="details-form">
+            <input name="id" type="hidden">
+            <label>Name<input name="name" required placeholder="Restaurant 01"></label>
+            <label>IP / Host<input name="host" required placeholder="192.168.1.50"></label>
+            <label>ADB target<input name="adbHost" placeholder="192.168.1.50:5555"></label>
+            <label>Location<input name="location" placeholder="Floor 1"></label>
+            <label>Notes<textarea name="notes" rows="4"></textarea></label>
+            <label class="check"><input name="enabled" type="checkbox"> Monitor this STB</label>
+            <div class="status-grid" aria-label="Selected STB status">
+              <div><span>Status</span><strong id="detailState">--</strong></div>
+              <div><span>Latency</span><strong id="detailLatency">--</strong></div>
+              <div><span>Last Checked</span><strong id="detailChecked">--</strong></div>
+              <div><span>Last Online</span><strong id="detailOnline">--</strong></div>
+            </div>
+            <div class="dialog-actions">
+              <button type="submit" class="primary">Save Changes</button>
+              <button type="button" id="detailsDelete">Delete</button>
+            </div>
+            <p id="detailsMessage" class="meta"></p>
+          </form>
+        </aside>
+      </section>
+
+      <section class="panel events-panel">
+        <div class="panel-head">
+          <h2>Events</h2>
+        </div>
+        <div id="eventList" class="events"></div>
+      </section>
+    </main>
+
+    <footer class="bottom-bar">
+      <button id="exportStbsBtn" type="button">Export STBs</button>
+      <button id="importStbsBtn" type="button">Import STBs</button>
+      <input id="importStbsFile" type="file" accept=".xml,text/xml,application/xml" hidden>
+      <button id="deleteAllStbsBtn" type="button">Delete All STBs</button>
+      <button id="showAllEventsBtn" type="button">Show All Events</button>
+      <button id="deleteAllEventsBtn" type="button">Delete All Events</button>
+      <button id="settingsBtn" type="button">Settings</button>
+    </footer>
+
+    <dialog id="deviceDialog">
+      <form id="deviceForm" method="dialog">
+        <h2>Add or Update STB</h2>
+        <label>Name<input name="name" required placeholder="Restaurant 01"></label>
+        <label>IP / Host<input name="host" required placeholder="192.168.1.50"></label>
+        <label>ADB target<input name="adbHost" placeholder="192.168.1.50:5555"></label>
+        <label>Location<input name="location" placeholder="Floor 1"></label>
+        <label>Notes<textarea name="notes" rows="3"></textarea></label>
+        <label class="check"><input name="enabled" type="checkbox" checked> Monitor this STB</label>
+        <div class="dialog-actions">
+          <button type="button" id="cancelDialog">Cancel</button>
+          <button class="primary" type="submit">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="settingsDialog">
+      <form id="settingsForm" method="dialog">
+        <div class="dialog-head">
+          <h2>Settings</h2>
+          <span id="settingsMessage" class="meta"></span>
+        </div>
+
+        <fieldset>
+          <legend>Monitoring</legend>
+          <label>Port<input name="port" type="number" min="1" required></label>
+          <label>Monitor interval ms<input name="monitorIntervalMs" type="number" min="5000" step="1000" required></label>
+          <label>Ping timeout ms<input name="pingTimeoutMs" type="number" min="1000" step="500" required></label>
+          <label>Alert cooldown ms<input name="alertCooldownMs" type="number" min="0" step="1000" required></label>
+          <label>Log Retension Period in Days<input name="logRetentionDays" type="number" min="1" step="1" required></label>
+          <label>ADB path<input name="adbPath" placeholder="adb"></label>
+          <label>Package Name<input name="packageName" placeholder="com.ristv.player"></label>
+          <label>RISTV apk file<input name="ristvApkFile" placeholder="C:\\path\\to\\ristv.apk"></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Email Alerts</legend>
+          <label>SMTP host<input name="smtpHost" placeholder="smtp.example.com"></label>
+          <label>SMTP port<input name="smtpPort" type="number" min="1" placeholder="587"></label>
+          <label class="check"><input name="smtpSecure" type="checkbox"> Use secure SMTP</label>
+          <label>SMTP username<input name="smtpUser" autocomplete="username"></label>
+          <label>SMTP password<input name="smtpPass" type="password" autocomplete="current-password"></label>
+          <label>From<input name="smtpFrom" placeholder="RISTV STB Monitor <alerts@example.com>"></label>
+          <label>Alert recipients<input name="smtpTo" placeholder="ops@example.com,noc@example.com"></label>
+        </fieldset>
+
+        <div class="dialog-actions">
+          <button type="button" id="testEmailBtn">Test Email</button>
+          <button type="button" id="cancelSettings">Cancel</button>
+          <button type="submit" class="primary">Save Settings</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="savingSettingsDialog" class="saving-dialog">
+      <div class="saving-box">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>
+          <h2>Saving settings</h2>
+          <p>Please wait while the monitor updates its configuration.</p>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="allEventsDialog" class="events-dialog">
+      <div class="dialog-head">
+        <h2>All Events</h2>
+        <button id="closeAllEvents" type="button">Close</button>
+      </div>
+      <div id="allEventsTable" class="events-table-wrap"></div>
+    </dialog>
+
+    <dialog id="exportDialog">
+      <div class="dialog-head">
+        <h2>Export STBs</h2>
+        <button id="closeExportDialog" type="button">Close</button>
+      </div>
+      <div class="export-options">
+        <button type="button" data-export-format="txt">TXT</button>
+        <button type="button" data-export-format="csv">CSV</button>
+        <button type="button" data-export-format="xml">XML</button>
+      </div>
+    </dialog>
+
+    <dialog id="screenshotDialog" class="screenshot-dialog">
+      <div class="dialog-head">
+        <h2 id="screenshotTitle">STB screenshot</h2>
+        <button id="closeScreenshotDialog" type="button">Close</button>
+      </div>
+      <div class="screenshot-viewer">
+        <img id="screenshotPreview" alt="">
+      </div>
+    </dialog>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

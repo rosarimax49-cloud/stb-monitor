@@ -1,0 +1,350 @@
+const http = require("http");
+const fs = require("fs/promises");
+const path = require("path");
+const url = require("url");
+const config = require("./config");
+const store = require("./store");
+const monitor = require("./monitor");
+const adb = require("./adb");
+const email = require("./email");
+
+const publicDir = path.join(process.cwd(), "public");
+const screenshotsDir = path.join(publicDir, "screenshots");
+
+function sendJson(res, statusCode, value) {
+  const body = JSON.stringify(value);
+  res.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": Buffer.byteLength(body),
+    "Cache-Control": "no-store",
+  });
+  res.end(body);
+}
+
+function sendText(res, statusCode, value) {
+  res.writeHead(statusCode, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end(value);
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1_000_000) {
+        req.destroy();
+        reject(new Error("Request body too large"));
+      }
+    });
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        reject(new Error("Invalid JSON"));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function deviceView(device) {
+  return {
+    ...device,
+    status: monitor.getStatus(device.id) || {
+      id: device.id,
+      name: device.name,
+      host: device.host,
+      adbHost: device.adbHost,
+      location: device.location,
+      state: device.enabled ? "unknown" : "disabled",
+      latencyMs: null,
+      lastCheckedAt: null,
+      lastOnlineAt: null,
+      lastOfflineAt: null,
+      error: "",
+    },
+  };
+}
+
+async function handleApi(req, res, parsedUrl) {
+  const pathname = parsedUrl.pathname;
+
+  if (req.method === "GET" && pathname === "/api/health") {
+    sendJson(res, 200, { ok: true, time: new Date().toISOString() });
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/devices") {
+    const devices = await store.listDevices();
+    sendJson(res, 200, { devices: devices.map(deviceView), intervalMs: config.monitorIntervalMs });
+    return;
+  }
+
+  if (req.method === "DELETE" && pathname === "/api/devices") {
+    await store.clearDevices();
+    await store.addEvent({
+      type: "devices",
+      message: "All STBs deleted",
+      severity: "warning",
+    });
+    sendJson(res, 200, { deleted: true });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/devices") {
+    const body = await readBody(req);
+    if (!body.name || !body.host) {
+      sendJson(res, 400, { error: "Device name and host are required" });
+      return;
+    }
+    const device = await store.upsertDevice(body);
+    if (device.enabled) {
+      monitor.checkDevice(device).catch((error) => {
+        console.error(`Device check failed for ${device.id}:`, error);
+      });
+    }
+    sendJson(res, 200, { device: deviceView(device) });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/devices/import") {
+    const body = await readBody(req);
+    const devices = Array.isArray(body.devices) ? body.devices : [];
+    const mode = body.mode === "replace" ? "replace" : "add";
+    const validDevices = devices.filter((device) => device && device.name && device.host);
+    if (!validDevices.length) {
+      sendJson(res, 400, { error: "No valid STBs were found in the import file" });
+      return;
+    }
+    const imported = await store.importDevices(validDevices, mode);
+    await store.addEvent({
+      type: "import",
+      message: `${validDevices.length} STB${validDevices.length === 1 ? "" : "s"} imported (${mode})`,
+      severity: "info",
+    });
+    sendJson(res, 200, { imported: validDevices.length, devices: imported.map(deviceView) });
+    return;
+  }
+
+  const deviceMatch = pathname.match(/^\/api\/devices\/([^/]+)$/);
+  if (deviceMatch && req.method === "DELETE") {
+    const deleted = await store.deleteDevice(decodeURIComponent(deviceMatch[1]));
+    sendJson(res, deleted ? 200 : 404, { deleted });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/check") {
+    await monitor.checkAll();
+    const devices = await store.listDevices();
+    sendJson(res, 200, { devices: devices.map(deviceView) });
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/events") {
+    sendJson(res, 200, { events: await store.listEvents(100) });
+    return;
+  }
+
+  if (req.method === "DELETE" && pathname === "/api/events") {
+    await store.clearEvents();
+    sendJson(res, 200, { deleted: true });
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/settings") {
+    sendJson(res, 200, { settings: config.getSettings() });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/settings") {
+    const body = await readBody(req);
+    const previousPort = config.port;
+    const settings = config.applySettings(body);
+    await store.saveSettings(settings);
+    await store.pruneEvents(settings.logRetentionDays);
+    monitor.restart();
+    await store.addEvent({
+      type: "settings",
+      message: "Settings updated",
+      severity: "info",
+    });
+    sendJson(res, 200, {
+      settings,
+      note: settings.port === previousPort ? "Saved" : "Port changes require a server restart",
+    });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/settings/test-email") {
+    const result = await email.sendMail({
+      subject: "[RISTV STB Monitor] Test email",
+      text: `This is a test email from RISTV STB Monitor.\n\nSent: ${new Date().toISOString()}`,
+    }).catch((error) => ({ ok: false, error: error.message }));
+    await store.addEvent({
+      type: "email-test",
+      message: result.ok ? "Test email sent" : `Test email failed: ${result.error || result.reason || "unknown error"}`,
+      severity: result.ok ? "info" : "warning",
+    });
+    sendJson(res, result.ok ? 200 : 500, { result });
+    return;
+  }
+
+  const adbMatch = pathname.match(/^\/api\/devices\/([^/]+)\/adb\/([^/]+)$/);
+  if (adbMatch && req.method === "POST") {
+    const id = decodeURIComponent(adbMatch[1]);
+    const action = decodeURIComponent(adbMatch[2]);
+    const body = await readBody(req);
+    const devices = await store.listDevices();
+    const device = devices.find((candidate) => candidate.id === id);
+    if (!device) {
+      sendJson(res, 404, { error: "Device not found" });
+      return;
+    }
+    if (!device.adbHost) {
+      sendJson(res, 400, { error: "ADB target is not configured for this device" });
+      return;
+    }
+
+    const commands = {
+      connect: () => adb.connect(device.adbHost),
+      disconnect: () => adb.disconnect(device.adbHost),
+      reboot: () => adb.reboot(device.adbHost),
+      props: () => adb.getProperties(device.adbHost),
+      shell: () => adb.shell(device.adbHost, body.command || "uptime"),
+    };
+
+    if (action === "install-ristv") {
+      const apkFile = config.ristvApkFile;
+      if (!apkFile) {
+        sendJson(res, 400, { error: "RISTV apk file is not configured in Settings" });
+        return;
+      }
+      const result = await adb.installApk(device.adbHost, apkFile);
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `RISTV install ${result.ok ? "completed" : "failed"} for ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "uninstall-ristv") {
+      const packageName = config.packageName;
+      if (!packageName) {
+        sendJson(res, 400, { error: "Package Name is not configured in Settings" });
+        return;
+      }
+      const result = await adb.uninstallPackage(device.adbHost, packageName);
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `RISTV uninstall ${result.ok ? "completed" : "failed"} for ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "screenshot") {
+      const result = await adb.screenshot(device.adbHost);
+      if (!result.ok || !result.stdout.length) {
+        await store.addEvent({
+          type: "adb",
+          deviceId: device.id,
+          deviceName: device.name,
+          message: `ADB screenshot failed for ${device.name}`,
+          severity: "warning",
+        });
+        sendJson(res, 500, { result: { ok: false, stderr: result.stderr, error: result.error || "No screenshot data returned" } });
+        return;
+      }
+      await fs.mkdir(screenshotsDir, { recursive: true });
+      const fileName = `${device.id}.png`;
+      const filePath = path.join(screenshotsDir, fileName);
+      await fs.writeFile(filePath, result.stdout);
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `Screenshot captured for ${device.name}`,
+        severity: "info",
+      });
+      sendJson(res, 200, { result: { ok: true, url: `/screenshots/${fileName}?t=${Date.now()}` } });
+      return;
+    }
+
+    if (!commands[action]) {
+      sendJson(res, 404, { error: "Unknown ADB action" });
+      return;
+    }
+    const result = await commands[action]();
+    await store.addEvent({
+      type: "adb",
+      deviceId: device.id,
+      deviceName: device.name,
+      message: `ADB ${action} ${result.ok ? "completed" : "failed"} for ${device.name}`,
+      severity: result.ok ? "info" : "warning",
+    });
+    sendJson(res, result.ok ? 200 : 500, { result });
+    return;
+  }
+
+  sendJson(res, 404, { error: "API route not found" });
+}
+
+async function serveStatic(req, res, parsedUrl) {
+  const requested = parsedUrl.pathname === "/" ? "/index.html" : parsedUrl.pathname;
+  const safePath = path.normalize(requested).replace(/^(\.\.[/\\])+/, "");
+  const filePath = path.join(publicDir, safePath);
+  if (!filePath.startsWith(publicDir)) {
+    sendText(res, 403, "Forbidden");
+    return;
+  }
+
+  try {
+    const data = await fs.readFile(filePath);
+    const ext = path.extname(filePath);
+    const type = {
+      ".html": "text/html; charset=utf-8",
+      ".css": "text/css; charset=utf-8",
+      ".js": "application/javascript; charset=utf-8",
+      ".json": "application/json; charset=utf-8",
+      ".svg": "image/svg+xml",
+    }[ext] || "application/octet-stream";
+    res.writeHead(200, { "Content-Type": type });
+    res.end(data);
+  } catch {
+    sendText(res, 404, "Not found");
+  }
+}
+
+const server = http.createServer(async (req, res) => {
+  const parsedUrl = url.parse(req.url, true);
+  try {
+    if (parsedUrl.pathname.startsWith("/api/")) {
+      await handleApi(req, res, parsedUrl);
+    } else {
+      await serveStatic(req, res, parsedUrl);
+    }
+  } catch (error) {
+    sendJson(res, 500, { error: error.message });
+  }
+});
+
+async function start() {
+  const storedSettings = await store.getSettings();
+  config.applySettings(storedSettings);
+  server.listen(config.port, () => {
+  monitor.start();
+  console.log(`RISTV STB Monitor running at http://localhost:${config.port}`);
+  });
+}
+
+start().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

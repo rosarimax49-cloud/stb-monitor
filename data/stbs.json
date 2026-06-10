@@ -1,0 +1,38 @@
+[
+  {
+    "id": "demo-lobby",
+    "name": "Lobby STB",
+    "host": "192.168.1.51",
+    "adbHost": "192.168.1.51:5555",
+    "location": "Lobby",
+    "notes": "Replace this demo device from the dashboard.",
+    "enabled": true
+  },
+  {
+    "id": "demo-studio",
+    "name": "Studio STB",
+    "host": "192.168.1.52",
+    "adbHost": "192.168.1.52:5555",
+    "location": "Studio",
+    "notes": "ADB over TCP must be enabled on the STB.",
+    "enabled": true
+  },
+  {
+    "id": "test",
+    "name": "Test",
+    "host": "192.168.50.22",
+    "adbHost": "192.168.50.22:5555",
+    "location": "",
+    "notes": "",
+    "enabled": false
+  },
+  {
+    "id": "samsung",
+    "name": "X96mini",
+    "host": "192.168.100.211",
+    "adbHost": "192.168.100.211:5555",
+    "location": "Office Max",
+    "notes": "here are the notes",
+    "enabled": true
+  }
+]

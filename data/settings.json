@@ -1,0 +1,19 @@
+{
+  "port": 3001,
+  "monitorIntervalMs": 30000,
+  "pingTimeoutMs": 3000,
+  "alertCooldownMs": 900000,
+  "logRetentionDays": 30,
+  "adbPath": "adb",
+  "packageName": "com.inorain.ristv",
+  "ristvApkFile": "C:\\Users\\User\\Downloads\\ristv_AC3_v20260519.apk",
+  "smtp": {
+    "host": "",
+    "port": 587,
+    "secure": false,
+    "user": "",
+    "pass": "",
+    "from": "RISTV STB Monitor <alerts@localhost>",
+    "to": []
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "ristv-stb-monitor",
+  "version": "1.0.0",
+  "description": "Dashboard and alerting app for monitoring RISTV STBs with ping and ADB management.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js"
+  },
+  "keywords": [
+    "ristv",
+    "stb",
+    "monitor",
+    "adb",
+    "ping"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
