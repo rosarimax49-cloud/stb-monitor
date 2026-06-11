@@ -804,5 +804,18 @@
     "ristvApkFileName": "",
     "ristvLauncherConfiguredAt": "",
     "ristvLauncherComponent": ""
+  },
+  {
+    "id": "444",
+    "name": "444",
+    "host": "192.168.68.116",
+    "adbHost": "192.168.68.116:5555",
+    "location": "444",
+    "notes": "",
+    "enabled": true,
+    "ristvInstalledAt": "2026-06-11T22:43:08.109Z",
+    "ristvApkFileName": "ristv_AC3_v20260519.apk",
+    "ristvLauncherConfiguredAt": "2026-06-11T22:43:39.872Z",
+    "ristvLauncherComponent": "com.inorain.ristv/com.netify.app.MainActivity"
   }
 ]
