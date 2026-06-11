@@ -1,57 +1,47 @@
 [
   {
-    "id": "3829420c-fb89-41a4-ae80-bb79a0dc138d",
-    "at": "2026-06-11T22:18:31.634Z",
+    "id": "1c22a042-d502-428f-847c-d069cc98f8e3",
+    "at": "2026-06-11T22:28:11.664Z",
     "type": "status-change",
-    "deviceId": "room-39-1",
-    "deviceName": "x96 Room 39",
-    "message": "x96 Room 39 is offline",
+    "deviceId": "room-207-2",
+    "deviceName": "x96 Room 207",
+    "message": "x96 Room 207 is offline",
     "severity": "critical"
-  }
-]
-
-    "id": "c1409393-569b-4280-9c5d-b17befd1725d",
-    "at": "2026-06-11T22:18:29.111Z",
+  },
+  {
+    "id": "e96ce259-09f2-4729-b791-d983fc5247df",
+    "at": "2026-06-11T22:28:11.665Z",
+    "type": "status-change",
+    "deviceId": "room-30-1",
+    "deviceName": "x96 Room 30",
+    "message": "x96 Room 30 is offline",
+    "severity": "critical"
+  },
+  {
+    "id": "80a41433-771d-47e8-aa91-75285763ebc8",
+    "at": "2026-06-11T22:28:11.675Z",
+    "type": "status-change",
+    "deviceId": "room-101-1",
+    "deviceName": "x96 Room 101",
+    "message": "x96 Room 101 is offline",
+    "severity": "critical"
+  },
+  {
+    "id": "3e596f44-8496-418f-9038-6e1e63a61e88",
+    "at": "2026-06-11T22:28:12.124Z",
     "type": "status-change",
     "deviceId": "room-16-1",
     "deviceName": "x96 Room 16",
-    "message": "x96 Room 16 is online",
-    "severity": "info"
-  },
-  {
-    "id": "56ed3104-f63c-4a57-a373-8946c54f7829",
-    "at": "2026-06-11T22:18:29.126Z",
-    "type": "status-change",
-    "deviceId": "room-46-1",
-    "deviceName": "x96 Room 46",
-    "message": "x96 Room 46 is online",
-    "severity": "info"
-  },
-  {
-    "id": "a17b92d5-a9a2-4741-b913-83cabefa4cb3",
-    "at": "2026-06-11T22:18:31.579Z",
-    "type": "status-change",
-    "deviceId": "room-309-1",
-    "deviceName": "x96 Room 309",
-    "message": "x96 Room 309 is offline",
+    "message": "x96 Room 16 is offline",
     "severity": "critical"
   },
   {
-    "id": "d1129680-de0b-454d-84e5-9ca88b1bfe90",
-    "at": "2026-06-11T22:18:31.615Z",
+    "id": "ef1b177e-8254-486c-840b-0ab53644b47d",
+    "at": "2026-06-11T22:28:12.134Z",
     "type": "status-change",
-    "deviceId": "room-203-2",
-    "deviceName": "x96 Room 203",
-    "message": "x96 Room 203 is offline",
-    "severity": "critical"
-  },
-  {
-    "id": "5c10c7b8-93a5-4838-afd1-f6b2e7fdeec3",
-    "at": "2026-06-11T22:18:31.634Z",
-    "type": "status-change",
-    "deviceId": "room-29-2",
-    "deviceName": "x96 Room 29",
-    "message": "x96 Room 29 is offline",
+    "deviceId": "room-14-1",
+    "deviceName": "x96 Room 14",
+    "message": "x96 Room 14 is offline",
     "severity": "critical"
   }
 ]
