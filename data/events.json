@@ -1,11 +1,57 @@
 [
   {
-    "id": "355ad421-eb62-42df-8ad1-c936e7a2ee31",
-    "at": "2026-06-11T10:48:46.186Z",
-    "type": "adb",
-    "deviceId": "samsung",
-    "deviceName": "X96mini",
-    "message": "Live stream started for X96mini",
+    "id": "3829420c-fb89-41a4-ae80-bb79a0dc138d",
+    "at": "2026-06-11T22:18:31.634Z",
+    "type": "status-change",
+    "deviceId": "room-39-1",
+    "deviceName": "x96 Room 39",
+    "message": "x96 Room 39 is offline",
+    "severity": "critical"
+  }
+]
+
+    "id": "c1409393-569b-4280-9c5d-b17befd1725d",
+    "at": "2026-06-11T22:18:29.111Z",
+    "type": "status-change",
+    "deviceId": "room-16-1",
+    "deviceName": "x96 Room 16",
+    "message": "x96 Room 16 is online",
     "severity": "info"
+  },
+  {
+    "id": "56ed3104-f63c-4a57-a373-8946c54f7829",
+    "at": "2026-06-11T22:18:29.126Z",
+    "type": "status-change",
+    "deviceId": "room-46-1",
+    "deviceName": "x96 Room 46",
+    "message": "x96 Room 46 is online",
+    "severity": "info"
+  },
+  {
+    "id": "a17b92d5-a9a2-4741-b913-83cabefa4cb3",
+    "at": "2026-06-11T22:18:31.579Z",
+    "type": "status-change",
+    "deviceId": "room-309-1",
+    "deviceName": "x96 Room 309",
+    "message": "x96 Room 309 is offline",
+    "severity": "critical"
+  },
+  {
+    "id": "d1129680-de0b-454d-84e5-9ca88b1bfe90",
+    "at": "2026-06-11T22:18:31.615Z",
+    "type": "status-change",
+    "deviceId": "room-203-2",
+    "deviceName": "x96 Room 203",
+    "message": "x96 Room 203 is offline",
+    "severity": "critical"
+  },
+  {
+    "id": "5c10c7b8-93a5-4838-afd1-f6b2e7fdeec3",
+    "at": "2026-06-11T22:18:31.634Z",
+    "type": "status-change",
+    "deviceId": "room-29-2",
+    "deviceName": "x96 Room 29",
+    "message": "x96 Room 29 is offline",
+    "severity": "critical"
   }
 ]

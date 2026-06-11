@@ -3,6 +3,7 @@ const config = require("./config");
 const { pingHost } = require("./ping");
 const store = require("./store");
 const email = require("./email");
+const adb = require("./adb");
 
 class Monitor extends EventEmitter {
   constructor() {
@@ -83,12 +84,31 @@ class Monitor extends EventEmitter {
         message: `${device.name} is ${state}`,
         severity: state === "online" ? "info" : "critical",
       });
+      if (state === "online") await this.startLauncherIfConfigured(device);
       if (state === "offline") await this.sendOfflineAlert(device, next, previous);
     } else if (state === "offline") {
       await this.sendOfflineAlert(device, next, previous);
     }
 
     return next;
+  }
+
+  async startLauncherIfConfigured(device) {
+    if (!device.ristvLauncherConfiguredAt || !device.adbHost || !config.packageName) return;
+
+    const connectResult = await adb.connect(device.adbHost);
+    const startResult = await adb.startPackage(device.adbHost, config.packageName);
+    await store.addEvent({
+      type: "adb",
+      deviceId: device.id,
+      deviceName: device.name,
+      message: startResult.ok
+        ? `RISTV launched automatically for ${device.name}`
+        : `RISTV auto-launch failed for ${device.name}: ${startResult.error || startResult.stderr || "unknown error"}`,
+      severity: startResult.ok ? "info" : "warning",
+      stdout: [connectResult.stdout, startResult.stdout].filter(Boolean).join("\n"),
+      stderr: [connectResult.stderr, startResult.stderr].filter(Boolean).join("\n"),
+    });
   }
 
   async sendOfflineAlert(device, status, previous) {

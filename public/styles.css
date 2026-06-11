@@ -285,11 +285,78 @@ button:focus-visible,
   color: #ffffff;
 }
 
+.view-switch {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.view-switch button {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 34px;
+  padding: 0 11px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.view-switch button:hover {
+  background: #f5fafb;
+  color: var(--accent);
+  transform: none;
+  box-shadow: none;
+}
+
+.view-switch button.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
 .device-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
   padding: 16px;
+}
+
+.device-cube-grid {
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+}
+
+.device-cube {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  box-shadow: var(--shadow-soft);
+  color: #ffffff;
+  display: grid;
+  min-height: 42px;
+  padding: 5px;
+  place-items: center;
+  text-align: center;
+}
+
+.device-cube span {
+  font-size: 10px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.device-cube.online {
+  background: var(--good);
+}
+
+.device-cube.offline {
+  background: var(--bad);
+}
+
+.device-cube.disabled {
+  background: #8a969d;
 }
 
 .device-list {
@@ -425,6 +492,28 @@ button:focus-visible,
   box-shadow: none;
 }
 
+.launcher-toggle {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.launcher-toggle span {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.launcher-toggle input {
+  flex: 0 0 auto;
+  min-height: 18px;
+  width: 18px;
+}
+
 .screenshot-box {
   align-items: center;
   aspect-ratio: 16 / 9;
@@ -484,6 +573,19 @@ button:focus-visible,
 .install-info strong {
   font-size: 12px;
   overflow-wrap: anywhere;
+}
+
+.apk-warning {
+  color: var(--bad);
+  display: inline-block;
+  font-style: normal;
+  font-weight: 900;
+  margin-left: 6px;
+}
+
+.apk-outdated {
+  color: var(--bad);
+  font-weight: 900;
 }
 
 .output {
@@ -588,8 +690,24 @@ dialog {
   width: min(420px, calc(100vw - 32px));
 }
 
+.install-dialog {
+  width: min(860px, calc(100vw - 28px));
+}
+
 .events-dialog {
   width: min(920px, calc(100vw - 32px));
+}
+
+.apps-dialog {
+  width: min(920px, calc(100vw - 32px));
+}
+
+.stb-info-dialog {
+  width: min(980px, calc(100vw - 32px));
+}
+
+.apps-filter {
+  margin-top: 12px;
 }
 
 .screenshot-dialog,
@@ -658,6 +776,18 @@ dialog {
   width: auto;
 }
 
+.screenshot-remote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.screenshot-remote button {
+  min-width: 96px;
+}
+
 .events-table-wrap {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -699,6 +829,81 @@ dialog {
   min-width: 260px;
 }
 
+.apps-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 14px;
+  max-height: min(620px, 70vh);
+  overflow: auto;
+}
+
+.apps-table {
+  border-collapse: collapse;
+  min-width: 720px;
+  width: 100%;
+}
+
+.apps-table th,
+.apps-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 11px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.apps-table th {
+  background: #f8fafb;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.apps-table td {
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.apps-table tr.configured-package td {
+  background: var(--accent-soft);
+}
+
+.stb-info-content {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  max-height: min(650px, 70vh);
+  overflow: auto;
+}
+
+.stb-info-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stb-info-section h3 {
+  background: #f8fafb;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  text-transform: uppercase;
+}
+
+.stb-info-section pre {
+  background: #11191f;
+  color: #d7eef3;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
 .export-options {
   display: grid;
   gap: 10px;
@@ -720,6 +925,35 @@ dialog {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.install-status {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.install-status p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+
+.install-log {
+  background: #11191f;
+  border: 1px solid #263b45;
+  border-radius: 8px;
+  color: #d7eef3;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 14px 0 0;
+  max-height: min(460px, 55vh);
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
 }
 
 .spinner {

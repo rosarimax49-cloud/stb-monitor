@@ -276,43 +276,23 @@ async function handleApi(req, res, parsedUrl) {
         sendJson(res, 400, { error: "RISTV apk file is not configured in Settings" });
         return;
       }
-      const packageName = config.packageName;
-      if (!packageName) {
-        sendJson(res, 400, { error: "Package Name is not configured in Settings" });
-        return;
-      }
-
-      const installResult = await adb.installApk(device.adbHost, apkFile);
-      let launcherResult = null;
-      if (installResult.ok) {
-        launcherResult = await adb.makeLauncher(device.adbHost, packageName);
+      const result = await adb.installApk(device.adbHost, apkFile);
+      result.apkFile = apkFile;
+      result.apkFileName = path.basename(apkFile);
+      if (result.ok) {
         await store.updateDevice(device.id, {
           ristvInstalledAt: new Date().toISOString(),
           ristvApkFileName: path.basename(apkFile),
-          ristvLauncherConfiguredAt: launcherResult.ok ? new Date().toISOString() : "",
-          ristvLauncherComponent: launcherResult.component || "",
         });
       }
-      const result = {
-        ...installResult,
-        ok: installResult.ok && (!launcherResult || launcherResult.ok),
-        stdout: [
-          installResult.stdout,
-          launcherResult?.stdout,
-          launcherResult?.ok ? "RISTV configured as launcher/home app." : "",
-        ].filter(Boolean).join("\n"),
-        stderr: [installResult.stderr, launcherResult?.stderr].filter(Boolean).join("\n"),
-        error: launcherResult && !launcherResult.ok ? launcherResult.error : installResult.error,
-        launcher: launcherResult,
-      };
       await store.addEvent({
         type: "adb",
         deviceId: device.id,
         deviceName: device.name,
-        message: `RISTV install ${installResult.ok ? "completed" : "failed"}${launcherResult ? `, launcher setup ${launcherResult.ok ? "completed" : "failed"}` : ""} for ${device.name}`,
+        message: `RISTV install ${result.ok ? "completed" : "failed"} for ${device.name}`,
         severity: result.ok ? "info" : "warning",
       });
-      sendJson(res, installResult.ok ? 200 : 500, { result });
+      sendJson(res, result.ok ? 200 : 500, { result });
       return;
     }
 
@@ -328,6 +308,79 @@ async function handleApi(req, res, parsedUrl) {
         deviceId: device.id,
         deviceName: device.name,
         message: `RISTV uninstall ${result.ok ? "completed" : "failed"} for ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "list-apps") {
+      const result = await adb.listInstalledApps(device.adbHost);
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `Installed apps listed for ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "device-info") {
+      const result = await adb.getDeviceInfo(device.adbHost);
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `STB info loaded for ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "keyevent") {
+      const allowedKeys = new Set(["LEFT", "RIGHT", "BACK", "ENTER", "UP", "DOWN"]);
+      const key = String(body.key || "").toUpperCase();
+      if (!allowedKeys.has(key)) {
+        sendJson(res, 400, { error: "Unsupported key event" });
+        return;
+      }
+      const keyCodes = {
+        LEFT: "KEYCODE_DPAD_LEFT",
+        RIGHT: "KEYCODE_DPAD_RIGHT",
+        BACK: "KEYCODE_BACK",
+        ENTER: "KEYCODE_ENTER",
+        UP: "KEYCODE_DPAD_UP",
+        DOWN: "KEYCODE_DPAD_DOWN",
+      };
+      const result = await adb.keyEvent(device.adbHost, keyCodes[key]);
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "launcher-ristv") {
+      const packageName = config.packageName;
+      if (!packageName) {
+        sendJson(res, 400, { error: "Package Name is not configured in Settings" });
+        return;
+      }
+      const enabled = body.enabled === true;
+      const result = enabled
+        ? await adb.makeLauncher(device.adbHost, packageName)
+        : await adb.clearLauncher(device.adbHost, packageName);
+      if (result.ok) {
+        await store.updateDevice(device.id, {
+          ristvLauncherConfiguredAt: enabled ? new Date().toISOString() : "",
+          ristvLauncherComponent: enabled ? result.component || "" : "",
+        });
+      }
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `RISTV launcher ${enabled ? "activation" : "deactivation"} ${result.ok ? "completed" : "failed"} for ${device.name}`,
         severity: result.ok ? "info" : "warning",
       });
       sendJson(res, result.ok ? 200 : 500, { result });

@@ -52,7 +52,11 @@
               </div>
               <span id="lastUpdated">Waiting for first check</span>
               <button id="listColumnsBtn" class="gear-button" type="button" title="List columns" aria-label="List columns" hidden>⚙</button>
-              <button id="viewToggle" type="button">List View</button>
+              <div class="view-switch" aria-label="Device view mode">
+                <button type="button" data-view-mode="card">Card View</button>
+                <button type="button" data-view-mode="list">List View</button>
+                <button type="button" data-view-mode="grid">Grid View</button>
+              </div>
             </div>
           </div>
           <div id="deviceGrid" class="device-grid"></div>
@@ -172,6 +176,16 @@
       </div>
     </dialog>
 
+    <dialog id="refreshingDialog" class="saving-dialog">
+      <div class="saving-box">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>
+          <h2>Refreshing Information</h2>
+          <p>Please wait while the latest STB status is loaded.</p>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="allEventsDialog" class="events-dialog">
       <div class="dialog-head">
         <h2>All Events</h2>
@@ -200,6 +214,15 @@
       <div class="screenshot-viewer">
         <img id="screenshotPreview" alt="">
       </div>
+      <div class="screenshot-remote" aria-label="STB remote controls">
+        <button type="button" data-screenshot-key="LEFT">&lt; Left</button>
+        <button type="button" data-screenshot-key="RIGHT">Right &gt;</button>
+        <button type="button" data-screenshot-key="BACK">&lt;-Back</button>
+        <button type="button" data-screenshot-key="ENTER">ENTER</button>
+        <button type="button" data-screenshot-key="UP">UP</button>
+        <button type="button" data-screenshot-key="DOWN">DOWN</button>
+      </div>
+      <p id="screenshotRemoteMessage" class="meta"></p>
     </dialog>
 
     <dialog id="liveStreamDialog" class="live-stream-dialog">
@@ -211,6 +234,43 @@
         <img id="liveStreamPreview" alt="">
       </div>
       <p id="liveStreamMessage" class="meta"></p>
+    </dialog>
+
+    <dialog id="installDialog" class="install-dialog">
+      <div class="dialog-head">
+        <h2 id="installTitle">Install RISTV</h2>
+        <div class="dialog-actions">
+          <button id="cancelInstallDialog" type="button">Cancel</button>
+          <button id="closeInstallDialog" type="button" disabled>Close</button>
+        </div>
+      </div>
+      <div class="install-status">
+        <div id="installSpinner" class="spinner" aria-hidden="true"></div>
+        <div>
+          <strong id="installState">Preparing install</strong>
+          <p id="installHint">Please wait while ADB installs RISTV.</p>
+        </div>
+      </div>
+      <pre id="installLog" class="install-log"></pre>
+    </dialog>
+
+    <dialog id="appsDialog" class="apps-dialog">
+      <div class="dialog-head">
+        <h2 id="appsTitle">Installed Apps</h2>
+        <button id="closeAppsDialog" type="button">Close</button>
+      </div>
+      <p id="appsMessage" class="meta"></p>
+      <input id="appsFilter" class="apps-filter" type="search" placeholder="Filter installed apps">
+      <div id="appsTable" class="apps-table-wrap"></div>
+    </dialog>
+
+    <dialog id="stbInfoDialog" class="stb-info-dialog">
+      <div class="dialog-head">
+        <h2 id="stbInfoTitle">STB Info</h2>
+        <button id="closeStbInfoDialog" type="button">Close</button>
+      </div>
+      <p id="stbInfoMessage" class="meta"></p>
+      <div id="stbInfoContent" class="stb-info-content"></div>
     </dialog>
 
     <dialog id="functionsDialog" class="functions-dialog">
