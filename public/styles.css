@@ -77,7 +77,24 @@ main {
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+  padding: 0 32px 12px;
+}
+
+.copyright {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
   padding: 0 32px 28px;
+  text-align: center;
+}
+
+.copyright a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.copyright a:hover {
+  text-decoration: underline;
 }
 
 .toolbar,
@@ -222,6 +239,13 @@ button:focus-visible,
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.gear-button {
+  border-radius: 999px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
 }
 
 .device-filter {
@@ -441,6 +465,27 @@ button:focus-visible,
   font-weight: 700;
 }
 
+.install-info {
+  background: var(--accent-soft);
+  border: 1px solid #cce5eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  padding: 10px;
+}
+
+.install-info span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.install-info strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .output {
   margin-top: 2px;
   border-radius: 6px;
@@ -547,11 +592,50 @@ dialog {
   width: min(920px, calc(100vw - 32px));
 }
 
-.screenshot-dialog {
+.screenshot-dialog,
+.live-stream-dialog {
   width: min(1180px, calc(100vw - 28px));
 }
 
-.screenshot-viewer {
+.functions-dialog {
+  width: min(520px, calc(100vw - 28px));
+}
+
+.functions-card-wrap {
+  margin-top: 14px;
+}
+
+.functions-card-wrap .device-card {
+  min-height: 0;
+}
+
+.functions-card-wrap .device-card:hover {
+  transform: none;
+}
+
+.column-picker {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.column-picker label {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  font-weight: 800;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.column-picker input {
+  height: 18px;
+  width: 18px;
+}
+
+.screenshot-viewer,
+.live-stream-viewer {
   align-items: center;
   background: #0d141a;
   border: 1px solid var(--line);
@@ -564,7 +648,8 @@ dialog {
   overflow: auto;
 }
 
-.screenshot-viewer img {
+.screenshot-viewer img,
+.live-stream-viewer img {
   display: block;
   height: auto;
   max-height: calc(100vh - 210px);

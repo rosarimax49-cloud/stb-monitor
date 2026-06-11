@@ -1,18 +1,11 @@
 [
   {
-    "id": "e4cd7239-2b74-463b-a992-460d509d4f8a",
-    "at": "2026-06-10T19:08:16.301Z",
-    "type": "alert",
-    "deviceId": "demo-studio",
-    "deviceName": "Studio STB",
-    "message": "Offline alert not sent for Studio STB: SMTP_HOST and ALERT_TO are not configured",
-    "severity": "warning"
-  },
-  {
-    "id": "81c6266f-3472-4b96-82c7-6f3880ac86e7",
-    "at": "2026-06-10T19:09:24.314Z",
-    "type": "settings",
-    "message": "Settings updated",
+    "id": "355ad421-eb62-42df-8ad1-c936e7a2ee31",
+    "at": "2026-06-11T10:48:46.186Z",
+    "type": "adb",
+    "deviceId": "samsung",
+    "deviceName": "X96mini",
+    "message": "Live stream started for X96mini",
     "severity": "info"
   }
 ]

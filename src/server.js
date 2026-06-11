@@ -26,6 +26,46 @@ function sendText(res, statusCode, value) {
   res.end(value);
 }
 
+async function streamDeviceScreen(req, res, device) {
+  await store.addEvent({
+    type: "adb",
+    deviceId: device.id,
+    deviceName: device.name,
+    message: `Live stream started for ${device.name}`,
+    severity: "info",
+  });
+
+  res.writeHead(200, {
+    "Content-Type": "multipart/x-mixed-replace; boundary=ristvframe",
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    "Connection": "close",
+    "Pragma": "no-cache",
+  });
+
+  let active = true;
+  req.on("close", () => {
+    active = false;
+  });
+
+  while (active) {
+    const frame = await adb.screenshot(device.adbHost);
+    if (frame.ok && frame.stdout.length) {
+      res.write(`--ristvframe\r\nContent-Type: image/png\r\nContent-Length: ${frame.stdout.length}\r\n\r\n`);
+      res.write(frame.stdout);
+      res.write("\r\n");
+    } else {
+      res.write(`--ristvframe\r\nContent-Type: text/plain\r\n\r\n${frame.error || frame.stderr || "No frame returned"}\r\n`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+  }
+
+  try {
+    res.end();
+  } catch {
+    // Client already closed the stream.
+  }
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -140,6 +180,23 @@ async function handleApi(req, res, parsedUrl) {
     return;
   }
 
+  const liveStreamMatch = pathname.match(/^\/api\/devices\/([^/]+)\/adb\/live-stream$/);
+  if (liveStreamMatch && req.method === "GET") {
+    const id = decodeURIComponent(liveStreamMatch[1]);
+    const devices = await store.listDevices();
+    const device = devices.find((candidate) => candidate.id === id);
+    if (!device) {
+      sendJson(res, 404, { error: "Device not found" });
+      return;
+    }
+    if (!device.adbHost) {
+      sendJson(res, 400, { error: "ADB target is not configured for this device" });
+      return;
+    }
+    await streamDeviceScreen(req, res, device);
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/events") {
     sendJson(res, 200, { events: await store.listEvents(100) });
     return;
@@ -219,15 +276,43 @@ async function handleApi(req, res, parsedUrl) {
         sendJson(res, 400, { error: "RISTV apk file is not configured in Settings" });
         return;
       }
-      const result = await adb.installApk(device.adbHost, apkFile);
+      const packageName = config.packageName;
+      if (!packageName) {
+        sendJson(res, 400, { error: "Package Name is not configured in Settings" });
+        return;
+      }
+
+      const installResult = await adb.installApk(device.adbHost, apkFile);
+      let launcherResult = null;
+      if (installResult.ok) {
+        launcherResult = await adb.makeLauncher(device.adbHost, packageName);
+        await store.updateDevice(device.id, {
+          ristvInstalledAt: new Date().toISOString(),
+          ristvApkFileName: path.basename(apkFile),
+          ristvLauncherConfiguredAt: launcherResult.ok ? new Date().toISOString() : "",
+          ristvLauncherComponent: launcherResult.component || "",
+        });
+      }
+      const result = {
+        ...installResult,
+        ok: installResult.ok && (!launcherResult || launcherResult.ok),
+        stdout: [
+          installResult.stdout,
+          launcherResult?.stdout,
+          launcherResult?.ok ? "RISTV configured as launcher/home app." : "",
+        ].filter(Boolean).join("\n"),
+        stderr: [installResult.stderr, launcherResult?.stderr].filter(Boolean).join("\n"),
+        error: launcherResult && !launcherResult.ok ? launcherResult.error : installResult.error,
+        launcher: launcherResult,
+      };
       await store.addEvent({
         type: "adb",
         deviceId: device.id,
         deviceName: device.name,
-        message: `RISTV install ${result.ok ? "completed" : "failed"} for ${device.name}`,
+        message: `RISTV install ${installResult.ok ? "completed" : "failed"}${launcherResult ? `, launcher setup ${launcherResult.ok ? "completed" : "failed"}` : ""} for ${device.name}`,
         severity: result.ok ? "info" : "warning",
       });
-      sendJson(res, result.ok ? 200 : 500, { result });
+      sendJson(res, installResult.ok ? 200 : 500, { result });
       return;
     }
 

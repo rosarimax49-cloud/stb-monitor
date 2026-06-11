@@ -1,3 +1,5 @@
+const defaultListColumns = ["name", "ip", "location", "status", "lastChecked", "lastOnline", "functions"];
+
 const state = {
   devices: [],
   events: [],
@@ -13,9 +15,43 @@ const state = {
     field: "name",
     direction: "asc",
   },
+  listColumns: loadListColumns(),
 };
 
 const $ = (selector) => document.querySelector(selector);
+
+const listColumnDefs = [
+  { key: "id", label: "ID", sort: "id", value: (device) => escapeHtml(device.id) },
+  { key: "name", label: "Name", sort: "name", value: (device) => `<strong>${escapeHtml(device.name)}</strong>` },
+  { key: "ip", label: "IP", sort: "ip", value: (device) => escapeHtml(device.host) },
+  { key: "adbHost", label: "ADB target", sort: "adbHost", value: (device) => escapeHtml(device.adbHost || "not set") },
+  { key: "location", label: "Location", sort: "location", value: (device) => escapeHtml(device.location || "No location") },
+  { key: "status", label: "Status", sort: "status", value: (device) => `<span class="status ${escapeHtml(device.status.state)}">${escapeHtml(device.status.state)}</span>` },
+  { key: "latency", label: "Latency", sort: "latency", value: (device) => device.status.latencyMs === null ? "--" : `${device.status.latencyMs} ms` },
+  { key: "lastChecked", label: "Last Checked", sort: "lastChecked", value: (device) => fmtTime(device.status.lastCheckedAt) },
+  { key: "lastOnline", label: "Last Online", sort: "lastOnline", value: (device) => fmtTime(device.status.lastOnlineAt) },
+  { key: "lastOffline", label: "Last Offline", sort: "lastOffline", value: (device) => fmtTime(device.status.lastOfflineAt) },
+  { key: "notes", label: "Notes", sort: "notes", value: (device) => escapeHtml(device.notes || "") },
+  { key: "enabled", label: "Enabled", sort: "enabled", value: (device) => device.enabled !== false ? "Yes" : "No" },
+  { key: "ristvInstalledAt", label: "RISTV installed", sort: "ristvInstalledAt", value: (device) => fmtDateTime(device.ristvInstalledAt) },
+  { key: "ristvApkFileName", label: "RISTV APK file", sort: "ristvApkFileName", value: (device) => escapeHtml(device.ristvApkFileName || "") },
+  { key: "ristvLauncherConfiguredAt", label: "Launcher configured", sort: "ristvLauncherConfiguredAt", value: (device) => fmtDateTime(device.ristvLauncherConfiguredAt) },
+  { key: "ristvLauncherComponent", label: "Launcher component", sort: "ristvLauncherComponent", value: (device) => escapeHtml(device.ristvLauncherComponent || "") },
+  { key: "functions", label: "Functions", value: (device) => `<button type="button" data-functions="${escapeHtml(device.id)}">Functions</button>` },
+];
+
+function loadListColumns() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("ristvListColumns") || "[]");
+    return Array.isArray(saved) && saved.length ? saved : defaultListColumns;
+  } catch {
+    return defaultListColumns;
+  }
+}
+
+function saveListColumns() {
+  localStorage.setItem("ristvListColumns", JSON.stringify(state.listColumns));
+}
 
 function fmtTime(value) {
   if (!value) return "--";
@@ -24,6 +60,11 @@ function fmtTime(value) {
     minute: "2-digit",
     second: "2-digit",
   }).format(new Date(value));
+}
+
+function fmtDateTime(value) {
+  if (!value) return "--";
+  return new Date(value).toLocaleString();
 }
 
 function escapeHtml(value) {
@@ -133,6 +174,7 @@ async function installRistv(id) {
     });
     const result = json.result;
     if (output) output.textContent = [result.stdout, result.stderr, result.error].filter(Boolean).join("\n") || "RISTV installed.";
+    await loadDevices();
     await loadEvents();
   } catch (error) {
     if (output) output.textContent = `Install failed: ${error.message}`;
@@ -188,6 +230,7 @@ function renderDevices() {
 
   grid.className = state.viewMode === "list" ? "device-grid device-list" : "device-grid";
   $("#viewToggle").textContent = state.viewMode === "list" ? "Card View" : "List View";
+  $("#listColumnsBtn").hidden = state.viewMode !== "list";
 
   if (!visibleDevices.length) {
     grid.innerHTML = '<p class="empty">No STBs match the current filters.</p>';
@@ -231,8 +274,14 @@ function sortedDevices(devices = filteredDevices()) {
   const valueFor = (device) => {
     if (state.sort.field === "status") return statusRank[device.status.state] ?? 9;
     if (state.sort.field === "ip") return device.host || "";
+    if (state.sort.field === "adbHost") return device.adbHost || "";
+    if (state.sort.field === "enabled") return device.enabled !== false ? 1 : 0;
+    if (state.sort.field === "latency") return device.status.latencyMs ?? Number.MAX_SAFE_INTEGER;
     if (state.sort.field === "lastChecked") return Date.parse(device.status.lastCheckedAt || "") || 0;
     if (state.sort.field === "lastOnline") return Date.parse(device.status.lastOnlineAt || "") || 0;
+    if (state.sort.field === "lastOffline") return Date.parse(device.status.lastOfflineAt || "") || 0;
+    if (state.sort.field === "ristvInstalledAt") return Date.parse(device.ristvInstalledAt || "") || 0;
+    if (state.sort.field === "ristvLauncherConfiguredAt") return Date.parse(device.ristvLauncherConfiguredAt || "") || 0;
     return device[state.sort.field] || "";
   };
   return [...devices].sort((a, b) => {
@@ -250,82 +299,108 @@ function sortLabel(field) {
   return state.sort.direction === "asc" ? " ^" : " v";
 }
 
+function deviceCardHtml(device, { selected = device.id === state.selectedDeviceId } = {}) {
+  const status = device.status;
+  const stateClass = escapeHtml(status.state);
+  const selectedClass = selected ? " selected" : "";
+  const screenshotUrl = state.screenshots[device.id];
+  const installInfo = device.ristvInstalledAt || device.ristvApkFileName
+    ? `
+        <div class="install-info">
+          <span>RISTV installed</span>
+          <strong>${escapeHtml(fmtDateTime(device.ristvInstalledAt))}</strong>
+          <span>APK file</span>
+          <strong>${escapeHtml(device.ristvApkFileName || "--")}</strong>
+          <span>Launcher</span>
+          <strong>${escapeHtml(device.ristvLauncherConfiguredAt ? `Configured ${fmtDateTime(device.ristvLauncherConfiguredAt)}` : "Not configured")}</strong>
+          ${device.ristvLauncherComponent ? `<span>Component</span><strong>${escapeHtml(device.ristvLauncherComponent)}</strong>` : ""}
+        </div>
+      `
+    : "";
+  return `
+    <article class="device-card${selectedClass}" data-device="${escapeHtml(device.id)}" tabindex="0">
+      <div class="device-top">
+        <div>
+          <div class="device-name">${escapeHtml(device.name)}</div>
+          <div class="meta">${escapeHtml(device.location || "No location")}</div>
+        </div>
+        <span class="status ${stateClass}">${escapeHtml(status.state)}</span>
+      </div>
+      <div class="meta">
+        Host: ${escapeHtml(device.host)}<br>
+        ADB: ${escapeHtml(device.adbHost || "not set")}<br>
+        Latency: ${status.latencyMs === null ? "--" : `${status.latencyMs} ms`}<br>
+        Checked: ${fmtTime(status.lastCheckedAt)}<br>
+        ${status.alert ? `Alert: ${status.alert.ok ? "sent" : "not sent"} ${escapeHtml(status.alert.error || "")}` : ""}
+      </div>
+      ${installInfo}
+      ${device.notes ? `<p class="meta">${escapeHtml(device.notes)}</p>` : ""}
+      <div class="screenshot-box">
+        ${screenshotUrl
+          ? `<button class="screenshot-thumb" type="button" data-screenshot-view="${escapeHtml(device.id)}" title="Open screenshot">
+              <img src="${escapeHtml(screenshotUrl)}" alt="${escapeHtml(device.name)} screenshot">
+            </button>`
+          : '<span>No screenshot captured</span>'}
+      </div>
+      <div class="device-actions">
+        <button data-adb="${device.id}:connect">Connect</button>
+        <button data-screenshot="${device.id}">Screenshot</button>
+        <button data-live-stream="${device.id}">Live Streaming</button>
+        <button data-install-ristv="${device.id}">Install RISTV</button>
+        <button data-uninstall-ristv="${device.id}">Uninstall RISTV</button>
+        <button data-adb="${device.id}:props">Props</button>
+        <button data-adb="${device.id}:reboot">Reboot</button>
+        <button data-delete="${device.id}">Delete</button>
+      </div>
+      <pre class="output" data-output="${device.id}"></pre>
+    </article>
+  `;
+}
+
 function renderDeviceCards(grid, devices) {
-  grid.innerHTML = sortedDevices(devices).map((device) => {
-    const status = device.status;
-    const stateClass = escapeHtml(status.state);
-    const selectedClass = device.id === state.selectedDeviceId ? " selected" : "";
-    const screenshotUrl = state.screenshots[device.id];
-    return `
-      <article class="device-card${selectedClass}" data-device="${escapeHtml(device.id)}" tabindex="0">
-        <div class="device-top">
-          <div>
-            <div class="device-name">${escapeHtml(device.name)}</div>
-            <div class="meta">${escapeHtml(device.location || "No location")}</div>
-          </div>
-          <span class="status ${stateClass}">${escapeHtml(status.state)}</span>
-        </div>
-        <div class="meta">
-          Host: ${escapeHtml(device.host)}<br>
-          ADB: ${escapeHtml(device.adbHost || "not set")}<br>
-          Latency: ${status.latencyMs === null ? "--" : `${status.latencyMs} ms`}<br>
-          Checked: ${fmtTime(status.lastCheckedAt)}<br>
-          ${status.alert ? `Alert: ${status.alert.ok ? "sent" : "not sent"} ${escapeHtml(status.alert.error || "")}` : ""}
-        </div>
-        ${device.notes ? `<p class="meta">${escapeHtml(device.notes)}</p>` : ""}
-        <div class="screenshot-box">
-          ${screenshotUrl
-            ? `<button class="screenshot-thumb" type="button" data-screenshot-view="${escapeHtml(device.id)}" title="Open screenshot">
-                <img src="${escapeHtml(screenshotUrl)}" alt="${escapeHtml(device.name)} screenshot">
-              </button>`
-            : '<span>No screenshot captured</span>'}
-        </div>
-        <div class="device-actions">
-          <button data-adb="${device.id}:connect">Connect</button>
-          <button data-screenshot="${device.id}">Screenshot</button>
-          <button data-install-ristv="${device.id}">Install RISTV</button>
-          <button data-uninstall-ristv="${device.id}">Uninstall RISTV</button>
-          <button data-adb="${device.id}:props">Props</button>
-          <button data-adb="${device.id}:reboot">Reboot</button>
-          <button data-delete="${device.id}">Delete</button>
-        </div>
-        <pre class="output" data-output="${device.id}"></pre>
-      </article>
-    `;
-  }).join("");
+  grid.innerHTML = sortedDevices(devices).map((device) => deviceCardHtml(device)).join("");
 }
 
 function renderDeviceList(grid, devices) {
+  const columns = listColumnDefs.filter((column) => state.listColumns.includes(column.key));
   grid.innerHTML = `
     <table class="device-table">
       <thead>
         <tr>
-          <th><button type="button" data-sort="name">Name${sortLabel("name")}</button></th>
-          <th><button type="button" data-sort="ip">IP${sortLabel("ip")}</button></th>
-          <th><button type="button" data-sort="location">Location${sortLabel("location")}</button></th>
-          <th><button type="button" data-sort="status">Status${sortLabel("status")}</button></th>
-          <th><button type="button" data-sort="lastChecked">Last Checked${sortLabel("lastChecked")}</button></th>
-          <th><button type="button" data-sort="lastOnline">Last Online${sortLabel("lastOnline")}</button></th>
+          ${columns.map((column) => `
+            <th>${column.sort
+              ? `<button type="button" data-sort="${escapeHtml(column.sort)}">${escapeHtml(column.label)}${sortLabel(column.sort)}</button>`
+              : escapeHtml(column.label)}
+            </th>
+          `).join("")}
         </tr>
       </thead>
       <tbody>
         ${sortedDevices(devices).map((device) => {
           const selectedClass = device.id === state.selectedDeviceId ? " selected" : "";
-          const statusClass = escapeHtml(device.status.state);
           return `
             <tr class="device-row${selectedClass}" data-device="${escapeHtml(device.id)}" tabindex="0">
-              <td><strong>${escapeHtml(device.name)}</strong></td>
-              <td>${escapeHtml(device.host)}</td>
-              <td>${escapeHtml(device.location || "No location")}</td>
-              <td><span class="status ${statusClass}">${escapeHtml(device.status.state)}</span></td>
-              <td>${fmtTime(device.status.lastCheckedAt)}</td>
-              <td>${fmtTime(device.status.lastOnlineAt)}</td>
+              ${columns.map((column) => `<td>${column.value(device)}</td>`).join("")}
             </tr>
           `;
         }).join("")}
       </tbody>
     </table>
   `;
+}
+
+function renderListColumnsDialog() {
+  $("#listColumnsForm").innerHTML = listColumnDefs.map((column) => `
+    <label>
+      <span>${escapeHtml(column.label)}</span>
+      <input type="checkbox" data-list-column="${escapeHtml(column.key)}" ${state.listColumns.includes(column.key) ? "checked" : ""}>
+    </label>
+  `).join("");
+}
+
+function openListColumnsDialog() {
+  renderListColumnsDialog();
+  $("#listColumnsDialog").showModal();
 }
 
 function setDetailsDisabled(disabled) {
@@ -451,6 +526,10 @@ function stbRows() {
     location: device.location || "",
     notes: device.notes || "",
     enabled: device.enabled !== false,
+    ristvInstalledAt: device.ristvInstalledAt || "",
+    ristvApkFileName: device.ristvApkFileName || "",
+    ristvLauncherConfiguredAt: device.ristvLauncherConfiguredAt || "",
+    ristvLauncherComponent: device.ristvLauncherComponent || "",
   }));
 }
 
@@ -469,7 +548,7 @@ function xmlText(value) {
 function exportContent(format) {
   const rows = stbRows();
   if (format === "csv") {
-    const header = ["id", "name", "host", "adbHost", "location", "notes", "enabled"];
+    const header = ["id", "name", "host", "adbHost", "location", "notes", "enabled", "ristvInstalledAt", "ristvApkFileName", "ristvLauncherConfiguredAt", "ristvLauncherComponent"];
     return [
       header.join(","),
       ...rows.map((row) => header.map((field) => csvCell(row[field])).join(",")),
@@ -488,6 +567,10 @@ function exportContent(format) {
         `    <location>${xmlText(row.location)}</location>`,
         `    <notes>${xmlText(row.notes)}</notes>`,
         `    <enabled>${row.enabled}</enabled>`,
+        `    <ristvInstalledAt>${xmlText(row.ristvInstalledAt)}</ristvInstalledAt>`,
+        `    <ristvApkFileName>${xmlText(row.ristvApkFileName)}</ristvApkFileName>`,
+        `    <ristvLauncherConfiguredAt>${xmlText(row.ristvLauncherConfiguredAt)}</ristvLauncherConfiguredAt>`,
+        `    <ristvLauncherComponent>${xmlText(row.ristvLauncherComponent)}</ristvLauncherComponent>`,
         "  </stb>",
       ].join("\n")),
       "</stbs>",
@@ -501,6 +584,10 @@ function exportContent(format) {
     `Location: ${row.location}`,
     `Notes: ${row.notes}`,
     `Enabled: ${row.enabled}`,
+    `RISTV installed: ${row.ristvInstalledAt}`,
+    `RISTV APK file: ${row.ristvApkFileName}`,
+    `RISTV launcher configured: ${row.ristvLauncherConfiguredAt}`,
+    `RISTV launcher component: ${row.ristvLauncherComponent}`,
   ].join("\n")).join("\n\n");
 }
 
@@ -540,6 +627,10 @@ function parseStbXml(text) {
     location: tagText(node, "location"),
     notes: tagText(node, "notes"),
     enabled: tagText(node, "enabled").toLowerCase() !== "false",
+    ristvInstalledAt: tagText(node, "ristvInstalledAt"),
+    ristvApkFileName: tagText(node, "ristvApkFileName"),
+    ristvLauncherConfiguredAt: tagText(node, "ristvLauncherConfiguredAt"),
+    ristvLauncherComponent: tagText(node, "ristvLauncherComponent"),
   })).filter((device) => device.name && device.host);
 }
 
@@ -585,6 +676,7 @@ function render() {
   renderStatusFilters();
   renderDevices();
   renderEvents();
+  renderOpenFunctionsDialog();
   const latest = state.devices
     .map((device) => device.status.lastCheckedAt)
     .filter(Boolean)
@@ -608,6 +700,49 @@ function openScreenshot(deviceId) {
   image.src = screenshotUrl;
   image.alt = `${device.name} screenshot`;
   $("#screenshotDialog").showModal();
+}
+
+function openLiveStream(deviceId) {
+  const device = state.devices.find((candidate) => candidate.id === deviceId);
+  if (!device) return;
+  $("#liveStreamTitle").textContent = `${device.name} live stream`;
+  $("#liveStreamMessage").textContent = "Streaming via ADB screenshots. Close this window to stop.";
+  const image = $("#liveStreamPreview");
+  image.alt = `${device.name} live stream`;
+  image.src = `/api/devices/${encodeURIComponent(deviceId)}/adb/live-stream?t=${Date.now()}`;
+  $("#liveStreamDialog").showModal();
+}
+
+function closeLiveStream() {
+  const image = $("#liveStreamPreview");
+  image.removeAttribute("src");
+  image.alt = "";
+  $("#liveStreamMessage").textContent = "";
+  $("#liveStreamDialog").close();
+  loadEvents().catch(() => {});
+}
+
+function renderOpenFunctionsDialog() {
+  const dialog = $("#functionsDialog");
+  if (!dialog.open) return;
+  const deviceId = dialog.dataset.deviceId;
+  const device = state.devices.find((candidate) => candidate.id === deviceId);
+  if (!device) {
+    dialog.close();
+    return;
+  }
+  $("#functionsTitle").textContent = `${device.name} functions`;
+  $("#functionsCard").innerHTML = deviceCardHtml(device, { selected: true });
+}
+
+function openFunctions(deviceId) {
+  const device = state.devices.find((candidate) => candidate.id === deviceId);
+  if (!device) return;
+  const dialog = $("#functionsDialog");
+  dialog.dataset.deviceId = deviceId;
+  $("#functionsTitle").textContent = `${device.name} functions`;
+  $("#functionsCard").innerHTML = deviceCardHtml(device, { selected: true });
+  dialog.showModal();
 }
 
 function openDialog() {
@@ -782,6 +917,29 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  const listColumnTarget = event.target.closest("[data-list-column]");
+  if (listColumnTarget) {
+    const key = listColumnTarget.dataset.listColumn;
+    if (listColumnTarget.checked) {
+      state.listColumns = [...new Set([...state.listColumns, key])];
+    } else {
+      state.listColumns = state.listColumns.filter((column) => column !== key);
+    }
+    if (!state.listColumns.length) {
+      state.listColumns = ["name"];
+      renderListColumnsDialog();
+    }
+    saveListColumns();
+    render();
+    return;
+  }
+
+  const functionsTarget = event.target.closest("[data-functions]");
+  if (functionsTarget) {
+    openFunctions(functionsTarget.dataset.functions);
+    return;
+  }
+
   const screenshotTarget = event.target.closest("[data-screenshot]");
   if (screenshotTarget) {
     await captureScreenshot(screenshotTarget.dataset.screenshot);
@@ -791,6 +949,12 @@ document.addEventListener("click", async (event) => {
   const screenshotViewTarget = event.target.closest("[data-screenshot-view]");
   if (screenshotViewTarget) {
     openScreenshot(screenshotViewTarget.dataset.screenshotView);
+    return;
+  }
+
+  const liveStreamTarget = event.target.closest("[data-live-stream]");
+  if (liveStreamTarget) {
+    openLiveStream(liveStreamTarget.dataset.liveStream);
     return;
   }
 
@@ -848,6 +1012,7 @@ document.addEventListener("keydown", (event) => {
 $("#addBtn").addEventListener("click", openDialog);
 $("#refreshBtn").addEventListener("click", refreshNow);
 $("#settingsBtn").addEventListener("click", openSettings);
+$("#listColumnsBtn").addEventListener("click", openListColumnsDialog);
 $("#exportStbsBtn").addEventListener("click", () => $("#exportDialog").showModal());
 $("#importStbsBtn").addEventListener("click", () => $("#importStbsFile").click());
 $("#deleteAllStbsBtn").addEventListener("click", deleteAllStbs);
@@ -863,6 +1028,12 @@ $("#importStbsFile").addEventListener("change", async (event) => {
 });
 $("#closeExportDialog").addEventListener("click", () => $("#exportDialog").close());
 $("#closeScreenshotDialog").addEventListener("click", () => $("#screenshotDialog").close());
+$("#closeLiveStreamDialog").addEventListener("click", closeLiveStream);
+$("#liveStreamDialog").addEventListener("close", () => {
+  $("#liveStreamPreview").removeAttribute("src");
+});
+$("#closeFunctionsDialog").addEventListener("click", () => $("#functionsDialog").close());
+$("#closeListColumnsDialog").addEventListener("click", () => $("#listColumnsDialog").close());
 document.querySelectorAll("[data-export-format]").forEach((button) => {
   button.addEventListener("click", () => exportStbs(button.dataset.exportFormat));
 });

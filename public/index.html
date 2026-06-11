@@ -51,6 +51,7 @@
                 <button type="button" data-status-filter="disabled">Disabled</button>
               </div>
               <span id="lastUpdated">Waiting for first check</span>
+              <button id="listColumnsBtn" class="gear-button" type="button" title="List columns" aria-label="List columns" hidden>⚙</button>
               <button id="viewToggle" type="button">List View</button>
             </div>
           </div>
@@ -102,6 +103,9 @@
       <button id="deleteAllEventsBtn" type="button">Delete All Events</button>
       <button id="settingsBtn" type="button">Settings</button>
     </footer>
+    <div class="copyright">
+      Copyright 2026 RISTV - <a href="https://www.ristv.com" target="_blank" rel="noopener noreferrer">www.ristv.com</a>
+    </div>
 
     <dialog id="deviceDialog">
       <form id="deviceForm" method="dialog">
@@ -196,6 +200,33 @@
       <div class="screenshot-viewer">
         <img id="screenshotPreview" alt="">
       </div>
+    </dialog>
+
+    <dialog id="liveStreamDialog" class="live-stream-dialog">
+      <div class="dialog-head">
+        <h2 id="liveStreamTitle">Live Streaming</h2>
+        <button id="closeLiveStreamDialog" type="button">Close</button>
+      </div>
+      <div class="live-stream-viewer">
+        <img id="liveStreamPreview" alt="">
+      </div>
+      <p id="liveStreamMessage" class="meta"></p>
+    </dialog>
+
+    <dialog id="functionsDialog" class="functions-dialog">
+      <div class="dialog-head">
+        <h2 id="functionsTitle">STB Functions</h2>
+        <button id="closeFunctionsDialog" type="button">Close</button>
+      </div>
+      <div id="functionsCard" class="functions-card-wrap"></div>
+    </dialog>
+
+    <dialog id="listColumnsDialog">
+      <div class="dialog-head">
+        <h2>List Columns</h2>
+        <button id="closeListColumnsDialog" type="button">Close</button>
+      </div>
+      <div id="listColumnsForm" class="column-picker"></div>
     </dialog>
 
     <script src="/app.js"></script>

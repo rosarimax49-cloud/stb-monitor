@@ -68,15 +68,30 @@ function normalizeDevice(input) {
     location: input.location || "",
     notes: input.notes || "",
     enabled: input.enabled !== false,
+    ristvInstalledAt: input.ristvInstalledAt || "",
+    ristvApkFileName: input.ristvApkFileName || "",
+    ristvLauncherConfiguredAt: input.ristvLauncherConfiguredAt || "",
+    ristvLauncherComponent: input.ristvLauncherComponent || "",
   };
 }
 
 async function upsertDevice(input) {
   const devices = await listDevices();
-  const next = normalizeDevice(input);
-  const index = devices.findIndex((device) => device.id === next.id);
+  const id = input.id || slug(input.name || input.host) || crypto.randomUUID();
+  const index = devices.findIndex((device) => device.id === id);
+  const next = normalizeDevice(index >= 0 ? { ...devices[index], ...input, id } : { ...input, id });
   if (index >= 0) devices[index] = next;
   else devices.push(next);
+  await saveDevices(devices);
+  return next;
+}
+
+async function updateDevice(id, patch) {
+  const devices = await listDevices();
+  const index = devices.findIndex((device) => device.id === id);
+  if (index < 0) return null;
+  const next = normalizeDevice({ ...devices[index], ...patch, id });
+  devices[index] = next;
   await saveDevices(devices);
   return next;
 }
@@ -177,5 +192,6 @@ module.exports = {
   pruneEvents,
   saveSettings,
   saveDevices,
+  updateDevice,
   upsertDevice,
 };
