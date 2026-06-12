@@ -260,8 +260,25 @@
         <button id="closeAppsDialog" type="button">Close</button>
       </div>
       <p id="appsMessage" class="meta"></p>
+      <div class="apps-install">
+        <input id="appsInstallFile" type="file" accept=".apk,application/vnd.android.package-archive">
+        <button id="appsInstallBtn" type="button">Install Selected App</button>
+      </div>
       <input id="appsFilter" class="apps-filter" type="search" placeholder="Filter installed apps">
       <div id="appsTable" class="apps-table-wrap"></div>
+    </dialog>
+
+    <dialog id="appActionsDialog" class="app-actions-dialog">
+      <div class="dialog-head">
+        <h2 id="appActionsTitle">App Actions</h2>
+        <button id="closeAppActionsDialog" type="button">Close</button>
+      </div>
+      <p id="appActionsMessage" class="meta"></p>
+      <div class="dialog-actions">
+        <button id="appMemoryBtn" type="button">Show Memory Used</button>
+        <button id="appUninstallBtn" type="button">Uninstall App</button>
+      </div>
+      <pre id="appActionsOutput" class="install-log"></pre>
     </dialog>
 
     <dialog id="stbInfoDialog" class="stb-info-dialog">

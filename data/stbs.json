@@ -826,9 +826,9 @@
     "location": "Max",
     "notes": "",
     "enabled": true,
-    "ristvInstalledAt": "",
-    "ristvApkFileName": "",
-    "ristvLauncherConfiguredAt": "",
-    "ristvLauncherComponent": ""
+    "ristvInstalledAt": "2026-06-12T07:32:07.132Z",
+    "ristvApkFileName": "ristv_AC3_v20260519.apk",
+    "ristvLauncherConfiguredAt": "2026-06-12T07:32:29.086Z",
+    "ristvLauncherComponent": "com.inorain.ristv/com.netify.app.MainActivity"
   }
 ]

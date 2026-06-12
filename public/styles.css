@@ -702,8 +702,20 @@ dialog {
   width: min(920px, calc(100vw - 32px));
 }
 
+.app-actions-dialog {
+  width: min(760px, calc(100vw - 32px));
+}
+
 .stb-info-dialog {
   width: min(980px, calc(100vw - 32px));
+}
+
+.apps-install {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  margin-top: 12px;
 }
 
 .apps-filter {
@@ -867,6 +879,24 @@ dialog {
 
 .apps-table tr.configured-package td {
   background: var(--accent-soft);
+}
+
+.app-package-button {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 900;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.app-package-button:hover {
+  box-shadow: none;
+  text-decoration: underline;
+  transform: none;
 }
 
 .stb-info-content {

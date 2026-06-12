@@ -22,6 +22,8 @@ const state = {
   installDialogOperation: "install",
   installedApps: [],
   installedAppsFilter: "",
+  installedAppsDeviceId: null,
+  selectedAppPackage: "",
   screenshotDeviceId: null,
 };
 
@@ -408,7 +410,11 @@ function renderInstalledApps() {
           const isConfiguredPackage = packageName && app.packageName.toLowerCase() === packageName;
           return `
           <tr class="${isConfiguredPackage ? "configured-package" : ""}">
-            <td>${isConfiguredPackage ? `<strong>${escapeHtml(app.packageName)}</strong>` : escapeHtml(app.packageName)}</td>
+            <td>
+              <button class="app-package-button" type="button" data-app-package="${escapeHtml(app.packageName)}">
+                ${isConfiguredPackage ? `<strong>${escapeHtml(app.packageName)}</strong>` : escapeHtml(app.packageName)}
+              </button>
+            </td>
             <td>${escapeHtml(app.apkPath || "--")}</td>
           </tr>
         `;
@@ -425,11 +431,14 @@ async function showInstalledApps(id) {
   if (!state.settings) await loadSettings();
   state.installedApps = [];
   state.installedAppsFilter = "";
+  state.installedAppsDeviceId = id;
+  state.selectedAppPackage = "";
   $("#appsTitle").textContent = `${device?.name || "STB"} installed apps`;
   $("#appsMessage").textContent = "Loading installed apps from ADB...";
   $("#appsFilter").value = "";
+  $("#appsInstallFile").value = "";
   $("#appsTable").innerHTML = '<p class="empty">Please wait...</p>';
-  $("#appsDialog").showModal();
+  if (!$("#appsDialog").open) $("#appsDialog").showModal();
   if (button) button.disabled = true;
   if (output) output.textContent = "Loading installed apps...";
   try {
@@ -450,6 +459,93 @@ async function showInstalledApps(id) {
     if (output) output.textContent = `Show installed apps failed: ${error.message}`;
   } finally {
     if (button) button.disabled = false;
+  }
+}
+
+function openAppActions(packageName) {
+  state.selectedAppPackage = packageName;
+  $("#appActionsTitle").textContent = packageName;
+  $("#appActionsMessage").textContent = "Choose an action for this installed app.";
+  $("#appActionsOutput").textContent = "";
+  $("#appActionsDialog").showModal();
+}
+
+async function showSelectedAppMemory() {
+  const packageName = state.selectedAppPackage;
+  const deviceId = state.installedAppsDeviceId;
+  if (!packageName || !deviceId) return;
+  $("#appActionsMessage").textContent = "Loading memory usage from ADB...";
+  $("#appActionsOutput").textContent = "";
+  try {
+    const json = await api(`/api/devices/${encodeURIComponent(deviceId)}/adb/app-memory`, {
+      method: "POST",
+      body: JSON.stringify({ packageName }),
+    });
+    $("#appActionsMessage").textContent = "Memory usage loaded.";
+    $("#appActionsOutput").textContent = [json.result.stdout, json.result.stderr, json.result.error].filter(Boolean).join("\n") || "No memory information returned.";
+    await loadEvents();
+  } catch (error) {
+    $("#appActionsMessage").textContent = `Memory check failed: ${error.message}`;
+    $("#appActionsOutput").textContent = error.payload?.result?.stdout || error.payload?.result?.stderr || error.payload?.result?.error || "";
+  }
+}
+
+async function uninstallSelectedApp() {
+  const packageName = state.selectedAppPackage;
+  const deviceId = state.installedAppsDeviceId;
+  if (!packageName || !deviceId) return;
+  if (!confirm(`Uninstall ${packageName} from this STB?`)) return;
+  $("#appActionsMessage").textContent = "Uninstalling app via ADB...";
+  $("#appActionsOutput").textContent = "";
+  try {
+    const json = await api(`/api/devices/${encodeURIComponent(deviceId)}/adb/uninstall-app`, {
+      method: "POST",
+      body: JSON.stringify({ packageName }),
+    });
+    $("#appActionsMessage").textContent = json.result.ok ? "App uninstalled." : "Uninstall finished with errors.";
+    $("#appActionsOutput").textContent = [json.result.stdout, json.result.stderr, json.result.error].filter(Boolean).join("\n") || "Uninstall completed.";
+    state.installedApps = state.installedApps.filter((app) => app.packageName !== packageName);
+    renderInstalledApps();
+    await loadEvents();
+  } catch (error) {
+    $("#appActionsMessage").textContent = `Uninstall failed: ${error.message}`;
+    $("#appActionsOutput").textContent = error.payload?.result?.stdout || error.payload?.result?.stderr || error.payload?.result?.error || "";
+  }
+}
+
+async function installSelectedAppFile() {
+  const deviceId = state.installedAppsDeviceId;
+  const file = $("#appsInstallFile").files[0];
+  if (!deviceId || !file) {
+    $("#appsMessage").textContent = "Please select an APK file first.";
+    return;
+  }
+  if (!confirm(`Install ${file.name} on this STB?`)) return;
+  $("#appsInstallBtn").disabled = true;
+  $("#appsMessage").textContent = `Installing ${file.name} via ADB...`;
+  try {
+    const response = await fetch(`/api/devices/${encodeURIComponent(deviceId)}/adb/install-app-file`, {
+      method: "POST",
+      headers: { "X-File-Name": file.name },
+      body: file,
+    });
+    const json = await response.json();
+    if (!response.ok) {
+      const error = new Error(json.error || json.result?.stderr || json.result?.error || "Install failed");
+      error.payload = json;
+      throw error;
+    }
+    $("#appsMessage").textContent = `${file.name} installed. Reloading installed apps...`;
+    await showInstalledApps(deviceId);
+  } catch (error) {
+    const result = error.payload?.result;
+    $("#appsMessage").textContent = `Install failed: ${error.message}`;
+    if (result) {
+      $("#appsTable").insertAdjacentHTML("afterbegin", `<pre class="install-log">${escapeHtml([result.stdout, result.stderr, result.error].filter(Boolean).join("\n"))}</pre>`);
+    }
+  } finally {
+    $("#appsInstallBtn").disabled = false;
+    await loadEvents();
   }
 }
 
@@ -1399,6 +1495,12 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  const appPackageTarget = event.target.closest("[data-app-package]");
+  if (appPackageTarget) {
+    openAppActions(appPackageTarget.dataset.appPackage);
+    return;
+  }
+
   const stbInfoTarget = event.target.closest("[data-stb-info]");
   if (stbInfoTarget) {
     await showStbInfo(stbInfoTarget.dataset.stbInfo);
@@ -1494,10 +1596,18 @@ $("#installDialog").addEventListener("cancel", (event) => {
   if (state.installDialogActive) event.preventDefault();
 });
 $("#closeAppsDialog").addEventListener("click", () => $("#appsDialog").close());
+$("#appsDialog").addEventListener("close", () => {
+  state.installedAppsDeviceId = null;
+  state.selectedAppPackage = "";
+});
+$("#appsInstallBtn").addEventListener("click", installSelectedAppFile);
 $("#appsFilter").addEventListener("input", (event) => {
   state.installedAppsFilter = event.target.value;
   renderInstalledApps();
 });
+$("#closeAppActionsDialog").addEventListener("click", () => $("#appActionsDialog").close());
+$("#appMemoryBtn").addEventListener("click", showSelectedAppMemory);
+$("#appUninstallBtn").addEventListener("click", uninstallSelectedApp);
 $("#closeStbInfoDialog").addEventListener("click", () => $("#stbInfoDialog").close());
 $("#closeFunctionsDialog").addEventListener("click", () => $("#functionsDialog").close());
 $("#closeListColumnsDialog").addEventListener("click", () => $("#listColumnsDialog").close());

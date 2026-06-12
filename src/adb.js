@@ -26,6 +26,31 @@ function runAdb(args, timeoutMs = 15000) {
   });
 }
 
+function normalizeConnectResult(result) {
+  const output = `${result.stdout}\n${result.stderr}\n${result.error}`.toLowerCase();
+  const failed = /\b(failed|unable|cannot|refused|timed out|no route|unknown host)\b/.test(output);
+  return failed ? { ...result, ok: false, error: result.error || result.stdout || result.stderr || "ADB connect failed" } : result;
+}
+
+function mergeConnectResult(connectResult, commandResult) {
+  return {
+    ...commandResult,
+    connect: connectResult,
+    connectStdout: connectResult.stdout,
+    connectStderr: connectResult.stderr,
+    stdout: commandResult.stdout,
+    stderr: commandResult.stderr,
+    error: [connectResult.error, commandResult.error].filter(Boolean).join("\n"),
+  };
+}
+
+async function runTargetAdb(adbHost, args, timeoutMs = 15000) {
+  const connectResult = await connect(adbHost);
+  if (!connectResult.ok) return mergeConnectResult(connectResult, { ok: false, code: connectResult.code, stdout: "", stderr: "", error: "ADB target is not connected" });
+  const commandResult = await runAdb(["-s", adbHost, ...args], timeoutMs);
+  return mergeConnectResult(connectResult, commandResult);
+}
+
 function runAdbBuffer(args, timeoutMs = 20000) {
   return new Promise((resolve) => {
     execFile(config.adbPath, args, { encoding: "buffer", maxBuffer: 20 * 1024 * 1024, timeout: timeoutMs }, (error, stdout, stderr) => {
@@ -41,7 +66,7 @@ function runAdbBuffer(args, timeoutMs = 20000) {
 }
 
 async function connect(adbHost) {
-  return runAdb(["connect", adbHost], 20000);
+  return normalizeConnectResult(await runAdb(["connect", adbHost], 20000));
 }
 
 async function disconnect(adbHost) {
@@ -49,15 +74,15 @@ async function disconnect(adbHost) {
 }
 
 async function reboot(adbHost) {
-  return runAdb(["-s", adbHost, "reboot"], 10000);
+  return runTargetAdb(adbHost, ["reboot"], 10000);
 }
 
 async function shell(adbHost, command) {
-  return runAdb(["-s", adbHost, "shell", command], 20000);
+  return runTargetAdb(adbHost, ["shell", command], 20000);
 }
 
 async function keyEvent(adbHost, keyCode) {
-  return runAdb(["-s", adbHost, "shell", "input", "keyevent", keyCode], 10000);
+  return runTargetAdb(adbHost, ["shell", "input", "keyevent", keyCode], 10000);
 }
 
 function shellQuote(value) {
@@ -65,7 +90,7 @@ function shellQuote(value) {
 }
 
 async function getProperties(adbHost) {
-  return runAdb(["-s", adbHost, "shell", "getprop ro.product.model; getprop ro.build.version.release; getprop ro.serialno"], 20000);
+  return runTargetAdb(adbHost, ["shell", "getprop ro.product.model; getprop ro.build.version.release; getprop ro.serialno"], 20000);
 }
 
 async function getDeviceInfo(adbHost) {
@@ -91,7 +116,24 @@ async function getDeviceInfo(adbHost) {
 }
 
 async function screenshot(adbHost) {
-  return runAdbBuffer(["-s", adbHost, "exec-out", "screencap", "-p"], 30000);
+  const connectResult = await connect(adbHost);
+  if (!connectResult.ok) {
+    return {
+      ok: false,
+      code: connectResult.code,
+      stdout: Buffer.alloc(0),
+      stderr: [connectResult.stderr, connectResult.stdout].filter(Boolean).join("\n"),
+      error: connectResult.error || "ADB target is not connected",
+      connect: connectResult,
+    };
+  }
+  const commandResult = await runAdbBuffer(["-s", adbHost, "exec-out", "screencap", "-p"], 30000);
+  return {
+    ...commandResult,
+    connect: connectResult,
+    stderr: [connectResult.stderr, commandResult.stderr].filter(Boolean).join("\n"),
+    error: [connectResult.error, commandResult.error].filter(Boolean).join("\n"),
+  };
 }
 
 async function installApk(adbHost, apkFile) {
@@ -104,8 +146,14 @@ async function installApk(adbHost, apkFile) {
   return installResult;
 }
 
+async function installApkOnDevice(adbHost, apkFile) {
+  const result = await runTargetAdb(adbHost, ["install", apkFile], 15 * 60 * 1000);
+  result.command = `${config.adbPath} -s ${adbHost} install "${apkFile}"`;
+  return result;
+}
+
 async function listInstalledApps(adbHost) {
-  const result = await runAdb(["-s", adbHost, "shell", "pm", "list", "packages", "-f"], 45000);
+  const result = await runTargetAdb(adbHost, ["shell", "pm", "list", "packages", "-f"], 45000);
   const apps = result.stdout
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -120,6 +168,10 @@ async function listInstalledApps(adbHost) {
     .filter((app) => app.packageName)
     .sort((a, b) => a.packageName.localeCompare(b.packageName, undefined, { sensitivity: "base" }));
   return { ...result, apps };
+}
+
+async function getPackageMemory(adbHost, packageName) {
+  return runTargetAdb(adbHost, ["shell", "dumpsys", "meminfo", packageName], 45000);
 }
 
 function parseResolvedComponent(output) {
@@ -164,7 +216,7 @@ async function queryHomeActivities(adbHost) {
 }
 
 async function startPackage(adbHost, packageName) {
-  return runAdb(["-s", adbHost, "shell", "monkey", "-p", packageName, "-c", "android.intent.category.LAUNCHER", "1"], 20000);
+  return runTargetAdb(adbHost, ["shell", "monkey", "-p", packageName, "-c", "android.intent.category.LAUNCHER", "1"], 20000);
 }
 
 async function makeLauncher(adbHost, packageName) {
@@ -248,7 +300,7 @@ async function clearLauncher(adbHost, packageName) {
 }
 
 async function uninstallPackage(adbHost, packageName) {
-  return runAdb(["-s", adbHost, "uninstall", packageName], 60000);
+  return runTargetAdb(adbHost, ["uninstall", packageName], 60000);
 }
 
 module.exports = {
@@ -257,7 +309,9 @@ module.exports = {
   disconnect,
   getDeviceInfo,
   getProperties,
+  getPackageMemory,
   installApk,
+  installApkOnDevice,
   keyEvent,
   listInstalledApps,
   makeLauncher,

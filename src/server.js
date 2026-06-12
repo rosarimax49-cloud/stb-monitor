@@ -1,5 +1,6 @@
 const http = require("http");
 const fs = require("fs/promises");
+const os = require("os");
 const path = require("path");
 const url = require("url");
 const config = require("./config");
@@ -85,6 +86,33 @@ function readBody(req) {
     });
     req.on("error", reject);
   });
+}
+
+function readBinaryBody(req, maxBytes = 500 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > maxBytes) {
+        req.destroy();
+        reject(new Error("Uploaded APK is too large"));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
+function cleanFileName(value) {
+  return path.basename(String(value || "app.apk")).replace(/[^A-Za-z0-9._-]/g, "_") || "app.apk";
+}
+
+function validPackageName(value) {
+  const packageName = String(value || "").trim();
+  return /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$/.test(packageName) ? packageName : "";
 }
 
 function deviceView(device) {
@@ -250,7 +278,7 @@ async function handleApi(req, res, parsedUrl) {
   if (adbMatch && req.method === "POST") {
     const id = decodeURIComponent(adbMatch[1]);
     const action = decodeURIComponent(adbMatch[2]);
-    const body = await readBody(req);
+    const body = action === "install-app-file" ? {} : await readBody(req);
     const devices = await store.listDevices();
     const device = devices.find((candidate) => candidate.id === id);
     if (!device) {
@@ -321,6 +349,67 @@ async function handleApi(req, res, parsedUrl) {
         deviceId: device.id,
         deviceName: device.name,
         message: `Installed apps listed for ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "app-memory") {
+      const packageName = validPackageName(body.packageName);
+      if (!packageName) {
+        sendJson(res, 400, { error: "Valid package name is required" });
+        return;
+      }
+      const result = await adb.getPackageMemory(device.adbHost, packageName);
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `Memory usage loaded for ${packageName} on ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "uninstall-app") {
+      const packageName = validPackageName(body.packageName);
+      if (!packageName) {
+        sendJson(res, 400, { error: "Valid package name is required" });
+        return;
+      }
+      const result = await adb.uninstallPackage(device.adbHost, packageName);
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `App uninstall ${result.ok ? "completed" : "failed"} for ${packageName} on ${device.name}`,
+        severity: result.ok ? "info" : "warning",
+      });
+      sendJson(res, result.ok ? 200 : 500, { result });
+      return;
+    }
+
+    if (action === "install-app-file") {
+      const fileName = cleanFileName(req.headers["x-file-name"]);
+      const apkBytes = await readBinaryBody(req);
+      if (!apkBytes.length) {
+        sendJson(res, 400, { error: "APK file is empty" });
+        return;
+      }
+      const uploadDir = path.join(os.tmpdir(), "ristv-stb-monitor-uploads");
+      await fs.mkdir(uploadDir, { recursive: true });
+      const apkPath = path.join(uploadDir, `${Date.now()}-${fileName}`);
+      await fs.writeFile(apkPath, apkBytes);
+      const result = await adb.installApkOnDevice(device.adbHost, apkPath);
+      result.apkFile = fileName;
+      await fs.unlink(apkPath).catch(() => {});
+      await store.addEvent({
+        type: "adb",
+        deviceId: device.id,
+        deviceName: device.name,
+        message: `App install ${result.ok ? "completed" : "failed"} for ${fileName} on ${device.name}`,
         severity: result.ok ? "info" : "warning",
       });
       sendJson(res, result.ok ? 200 : 500, { result });
