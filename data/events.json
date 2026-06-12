@@ -1,79 +1,7 @@
 [
   {
-    "id": "a768bf2d-a8f3-411e-89c4-c52f750db14f",
-    "at": "2026-06-12T07:26:09.536Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "Installed apps listed for X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "80a473f3-114f-4c82-805c-76bc15bb5f86",
-    "at": "2026-06-12T07:26:51.626Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "Memory usage loaded for com.topjohnwu.magisk on X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "9614fdb8-e3ce-4876-b3cc-08070c3a276b",
-    "at": "2026-06-12T07:26:58.613Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "App uninstall completed for com.topjohnwu.magisk on X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "a326daad-7049-49cf-9e74-3de9aee3c989",
-    "at": "2026-06-12T07:27:36.894Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "STB info loaded for X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "aa0a00f8-83f3-45c2-b77c-dd933998ce83",
-    "at": "2026-06-12T07:32:07.137Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "RISTV install completed for X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "673c59ce-5c0f-4fbe-9def-d4bd87e36332",
-    "at": "2026-06-12T07:32:29.090Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "RISTV launcher activation completed for X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "0ff9012a-9151-47b0-bb91-6cd77f0e60b7",
-    "at": "2026-06-12T07:32:42.348Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "Screenshot captured for X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "22e840e7-8e93-4879-989c-96198408aa15",
-    "at": "2026-06-12T07:32:45.904Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "ADB reboot completed for X96mini",
-    "severity": "info"
-  },
-  {
-    "id": "83665169-c21b-4246-a43a-b83b7646ccca",
-    "at": "2026-06-12T07:33:13.788Z",
+    "id": "bc4c48f5-34aa-473b-8041-edf40b64e4f2",
+    "at": "2026-06-12T08:11:34.025Z",
     "type": "status-change",
     "deviceId": "x96mini",
     "deviceName": "X96mini",
@@ -81,8 +9,8 @@
     "severity": "critical"
   },
   {
-    "id": "59b889ba-db94-42b5-a96e-bfee562b058b",
-    "at": "2026-06-12T07:33:13.798Z",
+    "id": "e7e6e1ee-71c1-40b2-94a6-8d98ba61bd68",
+    "at": "2026-06-12T08:11:34.041Z",
     "type": "alert",
     "deviceId": "x96mini",
     "deviceName": "X96mini",
@@ -90,8 +18,17 @@
     "severity": "warning"
   },
   {
-    "id": "cb1e5248-eb69-401b-959a-2af00ac04a7a",
-    "at": "2026-06-12T07:33:42.365Z",
+    "id": "57345fa3-370d-4905-b242-83dbf4ba1666",
+    "at": "2026-06-12T08:11:36.796Z",
+    "type": "alert",
+    "deviceId": "room-45-1",
+    "deviceName": "Room45",
+    "message": "Offline alert not sent for Room45: SMTP_HOST and ALERT_TO are not configured",
+    "severity": "warning"
+  },
+  {
+    "id": "85824ae1-1c03-4843-a2fa-e9db755dbe26",
+    "at": "2026-06-12T08:12:03.908Z",
     "type": "status-change",
     "deviceId": "x96mini",
     "deviceName": "X96mini",
@@ -99,23 +36,14 @@
     "severity": "info"
   },
   {
-    "id": "d69eb1be-fa77-460c-951d-2bb7c2e5653b",
-    "at": "2026-06-12T07:33:45.826Z",
+    "id": "8e2065e7-ce35-4089-8cbb-b90d19acc7d2",
+    "at": "2026-06-12T08:12:05.103Z",
     "type": "adb",
     "deviceId": "x96mini",
     "deviceName": "X96mini",
     "message": "RISTV launched automatically for X96mini",
     "severity": "info",
-    "stdout": "already connected to 192.168.100.211:5555\nbash arg: -p\r\n  bash arg: com.inorain.ristv\r\n  bash arg: -c\r\n  bash arg: android.intent.category.LAUNCHER\r\n  bash arg: 1\r\nEvents injected: 1\r\n## Network stats: elapsed time=201ms (0ms mobile, 0ms wifi, 201ms not connected)",
+    "stdout": "already connected to 192.168.100.211:5555\nbash arg: -p\r\n  bash arg: com.inorain.ristv\r\n  bash arg: -c\r\n  bash arg: android.intent.category.LAUNCHER\r\n  bash arg: 1\r\nEvents injected: 1\r\n## Network stats: elapsed time=42ms (0ms mobile, 0ms wifi, 42ms not connected)",
     "stderr": "args: [-p, com.inorain.ristv, -c, android.intent.category.LAUNCHER, 1]\r\n arg: \"-p\"\r\n arg: \"com.inorain.ristv\"\r\n arg: \"-c\"\r\n arg: \"android.intent.category.LAUNCHER\"\r\n arg: \"1\"\r\ndata=\"com.inorain.ristv\"\r\ndata=\"android.intent.category.LAUNCHER\""
-  },
-  {
-    "id": "8ca9cfbf-41b2-42a9-8236-00256ff1e2ab",
-    "at": "2026-06-12T07:34:23.930Z",
-    "type": "adb",
-    "deviceId": "x96mini",
-    "deviceName": "X96mini",
-    "message": "Installed apps listed for X96mini",
-    "severity": "info"
   }
 ]
