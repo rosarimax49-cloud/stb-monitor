@@ -1,132 +1,39 @@
 [
   {
-    "id": "0e71cfba-a85b-414b-a0d8-9d111ded2811",
-    "at": "2026-06-11T22:50:52.403Z",
+    "id": "fddbf679-9033-4cd8-8e06-d04bbc77c848",
+    "at": "2026-06-12T07:02:48.791Z",
     "type": "alert",
-    "deviceId": "room-307-2",
-    "deviceName": "x96 Room 307",
-    "message": "Offline alert not sent for x96 Room 307: SMTP_HOST and ALERT_TO are not configured",
+    "deviceId": "room-217-1",
+    "deviceName": "x96 Room 217",
+    "message": "Offline alert not sent for x96 Room 217: SMTP_HOST and ALERT_TO are not configured",
     "severity": "warning"
   },
   {
-    "id": "f27b922e-17ac-4535-b32c-4e95486a6a15",
-    "at": "2026-06-11T22:50:54.723Z",
+    "id": "390fc70e-32cc-4aa7-b578-f10ab0f7401b",
+    "at": "2026-06-12T07:02:48.808Z",
     "type": "alert",
-    "deviceId": "room-309-1",
-    "deviceName": "x96 Room 309",
-    "message": "Offline alert not sent for x96 Room 309: SMTP_HOST and ALERT_TO are not configured",
+    "deviceId": "room-217-2",
+    "deviceName": "x96 Room 217",
+    "message": "Offline alert not sent for x96 Room 217: SMTP_HOST and ALERT_TO are not configured",
     "severity": "warning"
   },
   {
-    "id": "00cdf5cb-97cc-4dfc-a877-2b3066247728",
-    "at": "2026-06-11T22:50:54.738Z",
+    "id": "aeb86cff-c01f-48b4-86a1-251b66bccc1c",
+    "at": "2026-06-12T07:02:49.282Z",
     "type": "alert",
-    "deviceId": "room-305-1",
-    "deviceName": "x96 Room 305",
-    "message": "Offline alert not sent for x96 Room 305: SMTP_HOST and ALERT_TO are not configured",
+    "deviceId": "room-11-1",
+    "deviceName": "x96 Room 11",
+    "message": "Offline alert not sent for x96 Room 11: SMTP_HOST and ALERT_TO are not configured",
     "severity": "warning"
   },
   {
-    "id": "f7eb93f8-ae5e-4566-88c5-ca0207d7a88a",
-    "at": "2026-06-11T22:50:54.740Z",
+    "id": "5a8fed60-bd9b-40bd-9e5e-9e338258696b",
+    "at": "2026-06-12T07:02:49.309Z",
     "type": "alert",
-    "deviceId": "room-409-1",
-    "deviceName": "x96 Room 409",
-    "message": "Offline alert not sent for x96 Room 409: SMTP_HOST and ALERT_TO are not configured",
+    "deviceId": "room-40-1",
+    "deviceName": "X96 Room 40",
+    "message": "Offline alert not sent for X96 Room 40: SMTP_HOST and ALERT_TO are not configured",
     "severity": "warning"
-  },
-  {
-    "id": "25ecf157-7ee6-493e-8699-c7ceaf1cd05c",
-    "at": "2026-06-11T22:50:55.221Z",
-    "type": "alert",
-    "deviceId": "room-30-1",
-    "deviceName": "x96 Room 30",
-    "message": "Offline alert not sent for x96 Room 30: SMTP_HOST and ALERT_TO are not configured",
-    "severity": "warning"
-  },
-  {
-    "id": "44da4c58-2112-4e1b-8175-61a3400ddd3a",
-    "at": "2026-06-11T22:50:55.250Z",
-    "type": "alert",
-    "deviceId": "room-28-1",
-    "deviceName": "x96 Room 28",
-    "message": "Offline alert not sent for x96 Room 28: SMTP_HOST and ALERT_TO are not configured",
-    "severity": "warning"
-  },
-  {
-    "id": "00d48649-9367-4454-9d2c-46c7e93536b3",
-    "at": "2026-06-11T22:50:55.254Z",
-    "type": "alert",
-    "deviceId": "room-38-1",
-    "deviceName": "x96 Room 38",
-    "message": "Offline alert not sent for x96 Room 38: SMTP_HOST and ALERT_TO are not configured",
-    "severity": "warning"
-  },
-  {
-    "id": "297b86a7-6158-4bb4-93cc-da39a093c618",
-    "at": "2026-06-11T22:51:25.237Z",
-    "type": "status-change",
-    "deviceId": "444",
-    "deviceName": "444",
-    "message": "444 is offline",
-    "severity": "critical"
-  },
-  {
-    "id": "64e13373-40f9-4ac4-a9f6-e5085017c6ad",
-    "at": "2026-06-11T22:51:52.493Z",
-    "type": "status-change",
-    "deviceId": "444",
-    "deviceName": "444",
-    "message": "444 is online",
-    "severity": "info"
-  },
-  {
-    "id": "65d17a9c-fb45-4fa8-959e-b3e9b3f82e2b",
-    "at": "2026-06-11T22:51:53.663Z",
-    "type": "adb",
-    "deviceId": "444",
-    "deviceName": "444",
-    "message": "RISTV launched automatically for 444",
-    "severity": "info",
-    "stdout": "already connected to 192.168.68.116:5555\nbash arg: -p\r\n  bash arg: com.inorain.ristv\r\n  bash arg: -c\r\n  bash arg: android.intent.category.LAUNCHER\r\n  bash arg: 1\r\nEvents injected: 1\r\n## Network stats: elapsed time=26ms (0ms mobile, 0ms wifi, 26ms not connected)",
-    "stderr": "args: [-p, com.inorain.ristv, -c, android.intent.category.LAUNCHER, 1]\r\n arg: \"-p\"\r\n arg: \"com.inorain.ristv\"\r\n arg: \"-c\"\r\n arg: \"android.intent.category.LAUNCHER\"\r\n arg: \"1\"\r\ndata=\"com.inorain.ristv\"\r\ndata=\"android.intent.category.LAUNCHER\""
-  },
-  {
-    "id": "d6f1315d-832b-4573-81eb-bd6a149fb0b8",
-    "at": "2026-06-11T22:53:55.250Z",
-    "type": "status-change",
-    "deviceId": "444",
-    "deviceName": "444",
-    "message": "444 is offline",
-    "severity": "critical"
-  },
-  {
-    "id": "b434e18c-776c-4d14-acc3-58e391469bff",
-    "at": "2026-06-11T22:53:55.264Z",
-    "type": "alert",
-    "deviceId": "444",
-    "deviceName": "444",
-    "message": "Offline alert not sent for 444: SMTP_HOST and ALERT_TO are not configured",
-    "severity": "warning"
-  },
-  {
-    "id": "6ae2e709-f081-4706-831e-81d9a612a56d",
-    "at": "2026-06-11T22:54:22.597Z",
-    "type": "status-change",
-    "deviceId": "444",
-    "deviceName": "444",
-    "message": "444 is online",
-    "severity": "info"
-  },
-  {
-    "id": "e4ba0694-6b72-4a03-a595-385a461eb6fe",
-    "at": "2026-06-11T22:54:23.736Z",
-    "type": "adb",
-    "deviceId": "444",
-    "deviceName": "444",
-    "message": "RISTV launched automatically for 444",
-    "severity": "info",
-    "stdout": "already connected to 192.168.68.116:5555\nbash arg: -p\r\n  bash arg: com.inorain.ristv\r\n  bash arg: -c\r\n  bash arg: android.intent.category.LAUNCHER\r\n  bash arg: 1\r\nEvents injected: 1\r\n## Network stats: elapsed time=28ms (0ms mobile, 0ms wifi, 28ms not connected)",
-    "stderr": "args: [-p, com.inorain.ristv, -c, android.intent.category.LAUNCHER, 1]\r\n arg: \"-p\"\r\n arg: \"com.inorain.ristv\"\r\n arg: \"-c\"\r\n arg: \"android.intent.category.LAUNCHER\"\r\n arg: \"1\"\r\ndata=\"com.inorain.ristv\"\r\ndata=\"android.intent.category.LAUNCHER\""
   }
 ]
+

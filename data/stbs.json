@@ -487,7 +487,7 @@
     "adbHost": "192.168.100.211:5555",
     "location": "8888",
     "notes": "Model: Droidlogic X96MINI_11; Device ID: 2e68f8993371c132; Package: Standard",
-    "enabled": true,
+    "enabled": false,
     "ristvInstalledAt": "",
     "ristvApkFileName": "",
     "ristvLauncherConfiguredAt": "",
@@ -817,5 +817,18 @@
     "ristvApkFileName": "ristv_AC3_v20260519.apk",
     "ristvLauncherConfiguredAt": "2026-06-11T22:43:39.872Z",
     "ristvLauncherComponent": "com.inorain.ristv/com.netify.app.MainActivity"
+  },
+  {
+    "id": "x96mini",
+    "name": "X96mini",
+    "host": "192.168.100.211",
+    "adbHost": "192.168.100.211:5555",
+    "location": "Max",
+    "notes": "",
+    "enabled": true,
+    "ristvInstalledAt": "",
+    "ristvApkFileName": "",
+    "ristvLauncherConfiguredAt": "",
+    "ristvLauncherComponent": ""
   }
 ]
